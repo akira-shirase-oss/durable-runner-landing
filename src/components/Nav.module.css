@@ -105,51 +105,9 @@
 :global(:root[data-theme='dark']) .moon {
   transform: rotate(0deg) scale(1);
 }
-/* The header's buttons. With the app live, one of two sets shows: the head script decides before the first
-   paint (html[data-session]), so each lays out on its own and nothing ever swaps on screen. */
+/* The header's one action: See the source (no hosted app or account exists). */
 .auth {
   display: flex;
-}
-.signedOut,
-.signedIn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.signedIn {
-  display: none;
-}
-:global(html[data-session='in']) .signedOut {
-  display: none;
-}
-:global(html[data-session='in']) .signedIn {
-  display: flex;
-}
-/* Sign in: the quiet one, a hairline-framed text button the height of the arrow button */
-.signIn {
-  display: inline-flex;
-  align-items: center;
-  height: 44px;
-  padding: 0 14px;
-  border: 1px solid var(--c-line);
-  border-radius: 8px;
-  font-family: var(--font-text);
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--c-ink);
-  transition: background-color 0.2s var(--ease);
-}
-.signIn:hover {
-  background: var(--c-surface);
-}
-.signIn:focus-visible {
-  outline: 2px solid var(--c-focus);
-  outline-offset: 3px;
-}
-/* in the phone menu the buttons start at the left, under the links */
-.authMenu .signedOut,
-.authMenu .signedIn {
-  justify-content: flex-start;
 }
 
 .burger,
