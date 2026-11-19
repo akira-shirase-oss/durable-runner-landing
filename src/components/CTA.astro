@@ -1,0 +1,22 @@
+---
+import { DOCS_URL, REPO } from '../data/app'
+import styles from './CTA.module.css'
+---
+
+<section class={styles.section} aria-labelledby="cta-heading">
+  <div class={styles.inner}>
+    <h2 id="cta-heading" class={styles.statement}>
+      Work acknowledged stays acknowledged —<br class={styles.br} /> crash, restart, deploy.
+    </h2>
+    <a class={styles.more} href={DOCS_URL}>
+      Read the docs <span aria-hidden="true">→</span>
+    </a>
+    <p class={styles.links}>
+      <a class={styles.link} href={DOCS_URL}>Documentation</a>
+      <span class={styles.sep} aria-hidden="true">·</span>
+      <a class={styles.link} href={`${DOCS_URL}/changelog/`}>Changelog</a>
+      <span class={styles.sep} aria-hidden="true">·</span>
+      <a class={styles.link} href={REPO}>GitHub</a>
+    </p>
+  </div>
+</section>

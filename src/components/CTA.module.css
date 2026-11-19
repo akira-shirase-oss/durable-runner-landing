@@ -1,0 +1,63 @@
+/* The closing statement: no card, the page's own surface, the content column — one display-size
+   sentence, the docs link under it, then the quiet resource row. */
+.section {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 0 var(--content-pad);
+}
+.inner {
+  width: 100%;
+  max-width: var(--content-max);
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+/* about 56px at 1440 and 30px at 390 */
+.statement {
+  font-family: var(--font-text);
+  font-size: clamp(30px, 20.3px + 2.5vw, 56px);
+  line-height: 1.18;
+  font-weight: 550;
+  letter-spacing: -0.02em;
+  color: var(--c-ink);
+  text-wrap: pretty;
+}
+.more {
+  align-self: flex-start;
+  font-family: var(--font-text);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--c-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--c-underline);
+  text-underline-offset: 4px;
+}
+.more:hover {
+  text-decoration-color: currentColor;
+}
+.links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+}
+.link {
+  color: var(--c-text);
+  text-decoration: underline;
+  text-decoration-color: var(--c-underline);
+  text-underline-offset: 3px;
+}
+.link:hover {
+  color: var(--c-ink);
+  text-decoration-color: currentColor;
+}
+.sep {
+  color: var(--c-muted);
+}
+
+@media (max-width: 809px) {
+  .br {
+    display: none;
+  }
+}

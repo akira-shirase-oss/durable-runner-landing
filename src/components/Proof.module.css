@@ -1,0 +1,113 @@
+/* The proof: raised cards whose numbers are set in Geist Pixel (39.47px = 1.5 cells — the next
+   size down from section titles), each with a "Measured." line and links to the evidence. */
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 52px;
+}
+
+.grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 36px;
+  border-radius: 24px;
+  background: var(--c-raised);
+  box-shadow: inset 0 0 0 1px var(--c-card-edge);
+  transition:
+    background-color 0.15s var(--ease),
+    box-shadow 0.15s var(--ease);
+}
+.wide {
+  grid-column: 1 / -1;
+}
+
+.stat {
+  font-family: var(--font-title);
+  font-size: 39.47px;
+  line-height: 1.1;
+  font-weight: 400;
+  color: var(--c-ink);
+}
+.title {
+  margin-top: 12px;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--c-ink);
+}
+.body {
+  margin-top: 12px;
+  max-width: 560px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--c-text);
+  text-wrap: pretty;
+}
+.measured {
+  margin-top: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--c-muted);
+  text-wrap: pretty;
+}
+.measured strong {
+  font-weight: 600;
+  color: var(--c-text);
+}
+.links {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+.sep {
+  color: var(--c-muted);
+}
+
+@media (hover: hover) {
+  .card:hover {
+    background: var(--c-raised-hover);
+    box-shadow: inset 0 0 0 1px var(--c-card-edge-hover);
+  }
+}
+
+@media (max-width: 1199px) {
+  .inner {
+    gap: 40px;
+  }
+  .card {
+    padding: 28px;
+  }
+  .stat {
+    font-size: 32.9px;
+  }
+}
+
+@media (max-width: 809px) {
+  .inner {
+    gap: 28px;
+  }
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .card {
+    padding: 24px;
+    border-radius: 20px;
+  }
+  .stat {
+    font-size: 26.32px;
+  }
+}
