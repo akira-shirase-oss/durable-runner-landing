@@ -1,6 +1,6 @@
 // @ts-check
 import { defineConfig } from 'astro/config'
-import { aaOnSurface } from './src/lib/shiki.ts'
+import { aaOnSurface } from './scripts/lib/shiki-transformer.mjs'
 
 // The one place the public address lives: canonical URLs, the sitemap and share images all derive from it.
 const site = 'https://durable-runner.404human.dev'
