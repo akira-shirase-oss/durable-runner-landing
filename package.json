@@ -1,0 +1,25 @@
+{
+  "name": "durable-runner-landing",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "lint": "oxlint",
+    "test": "node --test scripts/*.test.mjs",
+    "check": "node scripts/check-dist.mjs",
+    "check:browser": "node scripts/check-csp-browser.mjs",
+    "capture": "node scripts/capture.mjs"
+  },
+  "dependencies": {
+    "astro": "7.4.13"
+  },
+  "devDependencies": {
+    "fonteditor-core": "2.6.3",
+    "oxlint": "^1.90.0",
+    "typescript": "~7.0.2"
+  },
+  "license": "MIT"
+}

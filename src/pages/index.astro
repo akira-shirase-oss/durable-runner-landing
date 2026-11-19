@@ -1,0 +1,22 @@
+---
+import Base from '../layouts/Base.astro'
+import Nav from '../components/Nav.astro'
+import Hero from '../components/Hero.astro'
+import Footer from '../components/Footer.astro'
+import { hero } from '../data/hero'
+
+const title = `Durable Runner | ${hero.headline.replace(/\.$/, '')}`
+const description = hero.description
+---
+
+<Base title={title} description={description}>
+  <div id="root">
+    <div style="display: flex; flex-direction: column; align-items: center; overflow: clip;">
+      <Nav />
+      <main style="width: 100%; display: flex; flex-direction: column; align-items: center; margin-top: 1px; gap: var(--section-gap); padding-bottom: var(--section-gap);">
+        <Hero />
+      </main>
+      <Footer />
+    </div>
+  </div>
+</Base>

@@ -1,0 +1,6 @@
+{
+  "GHSA-fc5q-39xc-vjpf": {
+    "until": "2026-12-17",
+    "reason": "picomatch ReDoS reached only through Astro's build-time file matching on this site's own patterns; the site is static, so no visitor input reaches it. No fixed picomatch is published yet."
+  }
+}
