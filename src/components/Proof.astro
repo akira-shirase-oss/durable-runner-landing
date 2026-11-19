@@ -13,6 +13,7 @@ const cards = [
     stat: '4 of 4',
     title: 'the required failure cases, proven',
     body: 'Killed before acknowledging, killed after it, a handler reply that never arrives, a crash during compaction, a full disk, a second writer — each one mapped to the tests and live drills that cover it.',
+    label: 'Measured.',
     measured:
       'The kill -9 drill stops the server mid-work 36 times under load: 25,201 acknowledged submits and 9,119 cancels, zero lost, zero duplicated — a laptop drill, a development observation.',
     links: [
@@ -25,17 +26,20 @@ const cards = [
     stat: '1,000,000',
     title: 'of 1,000,000 submits accepted',
     body: 'Sent, accepted and drained to done — every single one. p50 12.5 ms, p99 41.3 ms; the journal grew to 496 MiB.',
+    label: 'Measured.',
     measured:
-      'The sustained gate at 100 submits a second for about 2.8 hours on a busy laptop (Apple M2 Pro, median load 3.52) — a development observation, not a capacity figure.',
+      'The sustained gate at 100 submits a second for about 2.8 hours on a busy laptop (Apple M2 Pro, median load 3.52) — a development observation, not a capacity figure. The same gate honestly misses on CI: a 4-core runner reaches the live-runs cap at about 85 completions a second, then refuses 503 at_capacity — a kept miss, never rerun until green.',
     links: [
       { label: 'The changelog entry', href: `${DOCS_URL}/changelog/#2026-11-17-million-submits` },
       { label: 'The run', href: `${REPO}/blob/main/perf/results/2026-11-17T08-42-51-578Z-sustained.json` },
+      { label: 'The kept miss', href: `${REPO}/actions/runs/44440111562` },
     ],
   },
   {
     stat: '0.4 s / 1.7 s',
     title: 'restart to ready',
     body: 'Process start to answering again, journal replay included: 0.4 s with 100,000 runs queued, 1.7 s with 800,000 — against a 5 s upgrade-unavailability target.',
+    label: 'Measured.',
     measured:
       'The restart-ready probe on the same laptop, after the journal became versioned; the unversioned format measured 1.1 s and 8.7 s the same night.',
     links: [
@@ -47,7 +51,8 @@ const cards = [
     stat: '64 · 100/s',
     title: 'per client address',
     body: 'Connections one untrusted address may hold, and requests it may start per second; over the line it gets 429 rate_limited with Retry-After. IPv6 counts per /64, with a /48 aggregate.',
-    measured: 'Defaults — like every limit here, they are flags you set, not promises we make.',
+    label: 'Default.',
+    measured: 'Like every limit here, they are flags you set, not promises we make.',
     links: [
       { label: 'The change', href: `${DOCS_URL}/changelog/#2026-11-16-conn-limits` },
       { label: 'Security', href: `${DOCS_URL}/self-hosting/security/` },
@@ -57,7 +62,8 @@ const cards = [
     stat: '/inspector',
     title: 'the runner, inspected',
     body: 'Runs newest-first or oldest-first with cursor paging, job detail, submit, cancel, compact, backup, diagnostics — read and write keys kept separate, stored in sessionStorage.',
-    measured: 'Served same-origin by durable-server itself: no second deploy, no CORS.',
+    label: 'Same-origin.',
+    measured: 'Served by durable-server itself: no second deploy, no CORS.',
     links: [{ label: 'The Inspector', href: `${DOCS_URL}/inspector/` }],
   },
 ]
@@ -76,7 +82,7 @@ const cards = [
             <h3 class={styles.title}>{c.title}</h3>
             <p class={styles.body}>{c.body}</p>
             <p class={styles.measured}>
-              <strong>Measured.</strong> {c.measured}
+              <strong>{c.label}</strong> {c.measured}
             </p>
             <p class={styles.links}>
               {c.links.map((l, i) => (

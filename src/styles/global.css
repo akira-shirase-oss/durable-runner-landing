@@ -288,7 +288,8 @@ figcaption {
 }
 @media (prefers-reduced-motion: no-preference) {
   [data-print-title][data-print='go'] {
-    animation: print calc(var(--print-line) * var(--print-lines, 1)) steps(var(--print-steps, 29), end);
+    /* the one-time print must finish in ~1.2 s however many lines the title wraps to */
+    animation: print min(calc(var(--print-line) * var(--print-lines, 1)), 1200ms) steps(var(--print-steps, 29), end);
   }
 }
 .visually-hidden {

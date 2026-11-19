@@ -21,22 +21,16 @@ cargo build --release --locked -p durable-server -p durable-cli`,
     label: 'Run it — one handler, one server',
     lang: 'sh',
     code: `export DURABLE_API_KEY=$(openssl rand -hex 32)
-export DURABLE_READ_KEY=$(openssl rand -hex 32)
-rm -rf journal backups   # a clean journal for this walkthrough
 python3 examples/pilot/handler.py 58320 >handler.log 2>&1 &
-HND=$!
 ./target/release/durable-server --journal journal --listen 127.0.0.1:58300 \\
   --backup-root backups --handler step=http://127.0.0.1:58320/step >server.log 2>&1 &
-SRV=$!
-for i in $(seq 1 150); do curl -sf http://127.0.0.1:58300/health >/dev/null && break; kill -0 $SRV 2>/dev/null || { echo "server died; check server.log"; break; }; sleep 0.1; done
-export PATH="$PWD/target/release:$PATH"
-alias durable="durable-cli --server http://127.0.0.1:58300"`,
+export PATH="$PWD/target/release:$PATH"`,
   },
   {
     label: 'Submit and inspect — the ack is a durable commit',
     lang: 'sh',
-    code: `durable submit --op-key demo/first-job --step greet=step --input '{"name":"ada"}'
-durable inspect --run 1`,
+    code: `durable-cli submit --op-key demo/first-job --step greet=step --input '{"name":"ada"}'
+durable-cli inspect --run 1`,
   },
 ]
 ---
@@ -64,9 +58,8 @@ durable inspect --run 1`,
       }
     </div>
     <p class={styles.more}>
-      Every step explained — and the API version of each call — in the{' '}
-      <a class="inline-link" href={`${DOCS_URL}/quick-start/`}>quick start</a>. Pre-release: built
-      from source, no binaries yet.
+      Keys, the health probe, expected output and the HTTP version of each call —{' '}
+      <a class="inline-link" href={`${DOCS_URL}/quick-start/`}>walk the full quick start</a>.
     </p>
   </div>
 </section>
