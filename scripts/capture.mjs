@@ -61,7 +61,20 @@ const server = createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': types[extname(file)] ?? 'application/octet-stream', ...headersFor(path) })
   res.end(readFileSync(file))
 })
-await new Promise((ok) => server.listen(0, '127.0.0.1', ok))
+// The port band the rules hand this repo (58680-58689): try each in turn, then let the kernel pick
+// if the band is full — a transient server should never fail on a taken port.
+const listen = (server) =>
+  new Promise((ok, err) => {
+    const band = Array.from({ length: 10 }, (_, i) => 58680 + i).concat(0)
+    const tryNext = () => {
+      const port = band.shift()
+      if (port === undefined) return err(new Error('no free port'))
+      server.once('error', tryNext)
+      server.listen(port, '127.0.0.1', () => { server.removeListener('error', tryNext); ok() })
+    }
+    tryNext()
+  })
+await listen(server)
 const origin = `http://127.0.0.1:${server.address().port}`
 
 const shots = [
