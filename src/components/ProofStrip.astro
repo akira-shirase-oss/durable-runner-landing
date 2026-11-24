@@ -1,56 +1,175 @@
 ---
-// Under the hero, where a logo wall would sit: the crash cases the runner is tested against, in grey,
-// fading toward both ends, with one sentence that says what they are. The row is decoration for sighted
-// readers; the list it shows is summed up in the sentence for everyone.
+// Under the hero, where a logo wall would sit: the crash cases the runner is tested against, in grey, moving
+// slowly sideways as a marquee that fades out at both edges (the maintainer's call, 2026-11-24). The list is
+// in the page as text for assistive tech; the moving row is decoration.
+//
+// The marquee is the page's one endless animation, guarded: it runs only while the strip is on screen and the
+// tab is visible, pauses under the pointer (so a case can play its micro-interaction) and with the pause
+// button, and never runs under reduced motion or without the script (it is paused in CSS until the script says
+// it is on screen). It moves by transform only.
 //
 // Micro-interactions (hover or tap): the case darkens, its icon acts out the failure once (a bolt, a snip,
 // an unplug, a full-disk shudder, a lock click; transform only, 320 ms, never repeating), and a green check
 // pops onto it: the runner survives it. Under reduced motion only the colour and the check change.
-import { Zap, Scissors, Unplug, HardDrive, Lock, Check } from '@lucide/svelte'
+import { Zap, Scissors, Unplug, HardDrive, Lock, Check, Pause, Play } from '@lucide/svelte'
 
 const cases = [
-  { label: 'kill -9', Icon: Zap, act: 'zap', faint: true },
+  { label: 'kill -9', Icon: Zap, act: 'zap' },
   { label: 'Torn writes', Icon: Scissors, act: 'snip' },
   { label: 'Lost replies', Icon: Unplug, act: 'unplug' },
   { label: 'Full disks', Icon: HardDrive, act: 'shudder' },
-  { label: 'Second writers', Icon: Lock, act: 'click', faint: true },
+  { label: 'Second writers', Icon: Lock, act: 'click' },
 ]
 ---
 
 <section class="proof" aria-label="Crash cases">
-  <ul class="marks" aria-hidden="true">
-    {
-      cases.map(({ label, Icon, act, faint }) => (
-        <li class:list={['mark', act, { faint }]}>
-          <span class="icon">
-            <Icon size={30} strokeWidth={1.9} />
-            <span class="ok">
-              <Check size={9} strokeWidth={3.4} />
-            </span>
-          </span>
-          <span>{label}</span>
-        </li>
-      ))
-    }
-  </ul>
-  <p class="caption">Tested against every documented crash case, from kill&nbsp;-9 to a second writer.</p>
+  <p class="sr-only">
+    Tested against every documented crash case: kill -9, torn writes, lost replies, full disks and second writers.
+  </p>
+  <div class="marquee" data-marquee>
+    <div class="track" aria-hidden="true">
+      {
+        [0, 1].map(() => (
+          <ul class="marks">
+            {cases.map(({ label, Icon, act }) => (
+              <li class:list={['mark', act]}>
+                <span class="icon">
+                  <Icon size={30} strokeWidth={1.9} />
+                  <span class="ok">
+                    <Check size={9} strokeWidth={3.4} />
+                  </span>
+                </span>
+                <span>{label}</span>
+              </li>
+            ))}
+          </ul>
+        ))
+      }
+    </div>
+    <button type="button" class="pause" aria-pressed="false" aria-label="Pause the moving strip" data-marquee-toggle>
+      <Pause class="i-pause" size={13} strokeWidth={2.4} aria-hidden="true" />
+      <Play class="i-play" size={13} strokeWidth={2.4} aria-hidden="true" />
+    </button>
+  </div>
 </section>
+
+<script>
+  // Run the marquee only while it is on screen and the tab is visible; the button pauses and resumes it.
+  for (const strip of document.querySelectorAll<HTMLElement>('[data-marquee]')) {
+    new IntersectionObserver((entries) => strip.toggleAttribute('data-on', entries.some((e) => e.isIntersecting))).observe(strip)
+    document.addEventListener('visibilitychange', () => strip.toggleAttribute('data-hidden', document.hidden))
+    const button = strip.querySelector<HTMLButtonElement>('[data-marquee-toggle]')
+    button?.addEventListener('click', () => {
+      const paused = !strip.hasAttribute('data-paused')
+      strip.toggleAttribute('data-paused', paused)
+      button.setAttribute('aria-pressed', String(paused))
+      button.setAttribute('aria-label', paused ? 'Play the moving strip' : 'Pause the moving strip')
+    })
+  }
+</script>
 
 <style>
   .proof {
+    position: relative;
     width: 100%;
     max-width: 1200px;
     margin: 0 auto;
     padding: 93px 16px 0;
   }
-  .marks {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    align-items: center;
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* the marquee: two identical rows side by side; moving the pair by half its width loops seamlessly */
+  .marquee {
+    position: relative;
     max-width: 1088px;
     margin: 0 auto;
-    padding: 0;
+    overflow: hidden;
+  }
+  .marquee::before,
+  .marquee::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 1;
+    width: 140px;
+    pointer-events: none;
+  }
+  .marquee::before {
+    left: 0;
+    background: linear-gradient(90deg, var(--c-page), transparent);
+  }
+  .marquee::after {
+    right: 0;
+    background: linear-gradient(270deg, var(--c-page), transparent);
+  }
+  .track {
+    display: flex;
+    width: max-content;
+    animation: proof-marquee 38s linear infinite paused;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .marquee[data-on]:not([data-paused]):not([data-hidden]):not(:hover) .track {
+      animation-play-state: running;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .track {
+      animation: none;
+    }
+    .pause {
+      display: none;
+    }
+  }
+  @keyframes proof-marquee {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  .marks {
+    display: flex;
+    align-items: center;
+    gap: 76px;
+    margin: 0;
+    padding: 0 76px 0 0;
     list-style: none;
+  }
+  .pause {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    z-index: 2;
+    margin-top: -15px;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--c-mark);
+    cursor: pointer;
+    transition:
+      background-color 150ms ease-out,
+      color 150ms ease-out;
+  }
+  .pause:hover {
+    background: var(--c-hover);
+    color: var(--c-ink);
+  }
+  .pause :global(.i-play),
+  .pause[aria-pressed='true'] :global(.i-pause) {
+    display: none;
+  }
+  .pause[aria-pressed='true'] :global(.i-play) {
+    display: block;
   }
   .mark {
     display: flex;
@@ -66,9 +185,6 @@ const cases = [
     cursor: default;
     -webkit-tap-highlight-color: transparent;
     transition: color 150ms ease-out;
-  }
-  .mark.faint {
-    color: var(--c-mark-faint);
   }
   .icon {
     position: relative;
@@ -159,39 +275,29 @@ const cases = [
     100% { transform: translateY(0) scale(1); }
   }
 
-  .caption {
-    margin: 30px auto 0;
-    font-size: 16.5px;
-    line-height: 24px;
-    letter-spacing: 0.003em;
-    color: var(--c-ink-soft);
-    text-align: center;
-  }
   @media (max-width: 899px) {
     .proof {
       padding-top: 64px;
     }
     .marks {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px 24px;
+      gap: 44px;
+      padding-right: 44px;
     }
     .mark {
       gap: 7px;
-      height: 30px;
+      height: 32px;
       font-size: 18px;
-    }
-    .mark.faint {
-      color: var(--c-mark);
     }
     .icon > :global(svg:first-child) {
       width: 22px;
       height: 22px;
     }
-    .caption {
-      margin-top: 22px;
-      font-size: 15.5px;
+    .marquee::before,
+    .marquee::after {
+      width: 56px;
+    }
+    .track {
+      animation-duration: 28s;
     }
   }
 </style>
