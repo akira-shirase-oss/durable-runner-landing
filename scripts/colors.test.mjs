@@ -16,7 +16,7 @@ const EXEMPT = new Set([
   'public/icons/github.svg',
   'public/icons/x.svg',
 ])
-const SCANNED = /\.(css|astro|ts|mjs|js|md|mdx|svg|html)$/
+const SCANNED = /\.(css|astro|svelte|ts|mjs|js|md|mdx|svg|html)$/
 
 const files = (dir) =>
   readdirSync(join(root, dir), { withFileTypes: true }).flatMap((e) =>

@@ -1,6 +1,6 @@
 // Loads every built page in headless Chromium with the headers from dist/_headers and fails on any
-// Content-Security-Policy violation, page error, failed request or broken image. It also presses the
-// theme toggle and the phone menu, which proves the hashed inline scripts actually ran.
+// Content-Security-Policy violation, page error, failed request or broken image. It also steps the hero's
+// story card and applies a stored theme, which proves the hashed inline scripts actually ran.
 //
 //   npm run build && npm run check:browser
 //   node scripts/check-csp-browser.mjs --mutate   # serves a CSP with the script hashes removed; must fail
@@ -150,12 +150,6 @@ async function visit(path, viewport, act, colorScheme = 'light') {
 const desktop = { width: 1440, height: 900 }
 const phone = { width: 390, height: 844 }
 
-const expectAttr = async (page, report, selector, attr, want) => {
-  interactions++
-  const got = await page.locator(selector).first().getAttribute(attr)
-  if (got !== want) report(`${selector} has ${attr}=${got} after the click (want ${want}): its script did not run`)
-}
-
 for (const path of pages) {
   await visit(path, desktop)
 }
@@ -166,6 +160,18 @@ for (const path of pages) {
     const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor)
     if (bg === 'rgb(255, 255, 255)') report(`the system asks for dark, but the page background is ${bg}`)
   }, 'dark')
+}
+
+// A stored Dark choice is applied by the hashed inline head script before first paint, on a light system.
+{
+  const context = await browser.newContext({ viewport: desktop })
+  await context.addInitScript(() => { try { localStorage.setItem('theme', 'dark') } catch {} })
+  const page = await context.newPage()
+  await page.goto(origin + '/', { waitUntil: 'domcontentloaded' })
+  interactions++
+  const early = await page.evaluate(() => ({ theme: document.documentElement.dataset.theme ?? null, page: getComputedStyle(document.documentElement).getPropertyValue('--c-page').trim() }))
+  if (early.theme !== 'dark' || early.page !== '#0d0e10') problems.push(`/ [stored theme]: a stored Dark is not applied before first paint: ${JSON.stringify(early)}`)
+  await context.close()
 }
 
 // The theme toggle (the family's): one button, aria-pressed when dark. On a light system, pressing stores
@@ -197,8 +203,8 @@ await visit('/', desktop, async (page, report) => {
   if (s.theme !== 'dark' || s.stored !== 'dark' || s.pressed !== 'true') report(`pressing on a light system did not store Dark: ${JSON.stringify(s)}`)
   if (!(s.vt >= 1)) report('with motion allowed, the switch did not run as a view transition')
   await page.reload({ waitUntil: 'domcontentloaded' })
-  const early = await page.evaluate(() => ({ theme: document.documentElement.dataset.theme, bg: getComputedStyle(document.documentElement).getPropertyValue('--c-bg').trim() }))
-  if (early.theme !== 'dark' || early.bg !== '#121211') report(`a stored Dark is not applied before first paint: ${JSON.stringify(early)}`)
+  const early = await page.evaluate(() => ({ theme: document.documentElement.dataset.theme, page: getComputedStyle(document.documentElement).getPropertyValue('--c-page').trim() }))
+  if (early.theme !== 'dark' || early.page !== '#0d0e10') report(`a stored Dark is not applied before first paint: ${JSON.stringify(early)}`)
   await page.waitForLoadState('networkidle')
   await page.locator('[data-theme-toggle]').focus()
   await page.keyboard.press('Enter')
@@ -243,31 +249,235 @@ await visit('/', desktop, async (page, report) => {
   if ((await page.evaluate(() => document.documentElement.dataset.theme)) !== 'light') report('with storage blocked, the toggle did not switch to Light')
 }, 'dark')
 
-// The hero title prints at load but is real text from the first moment: in the accessibility tree at once,
-// fully revealed by 1.5 s, and still when motion is reduced.
-{
-  const context = await browser.newContext({ viewport: phone })
+// Each theme has its own landscape and downloads only that one: the day picture in light, the moonlit one in
+// dark; the phone's inspector screen follows the theme too.
+for (const scheme of ['light', 'dark']) {
+  const context = await browser.newContext({ viewport: desktop, colorScheme: scheme })
   const page = await context.newPage()
-  await page.goto(origin + '/', { waitUntil: 'domcontentloaded' })
-  const tree = await page.locator('h1').ariaSnapshot()
-  const early = await page.evaluate(() => { const h = document.querySelector('h1'); return { print: h.dataset.print, lines: getComputedStyle(h).getPropertyValue('--print-lines') } })
+  const pictures = []
+  page.on('request', (r) => { if (/\/hero\/landscape/.test(r.url())) pictures.push(new URL(r.url()).pathname) })
+  await page.goto(origin + '/', { waitUntil: 'networkidle' })
   interactions++
-  if (!/Accepting a job is a durable commit/.test(tree)) problems.push(`/ [hero title]: not in the accessibility tree at load (${tree})`)
-  if (early.print !== 'go') problems.push(`/ [hero title]: the print was not armed (${JSON.stringify(early)})`)
-  await page.waitForTimeout(1500)
-  const later = await page.evaluate(() => getComputedStyle(document.querySelector('h1')).clipPath)
-  if (later !== 'none' && !/inset\(0px\)/.test(later)) problems.push(`/ [hero title]: not fully shown after 1.5 s (clip-path ${later})`)
+  const want = scheme === 'dark' ? '/hero/landscape-night.webp' : '/hero/landscape.webp'
+  const got = await page.evaluate(() => ({
+    panel: getComputedStyle(document.querySelector('.panel')).backgroundImage,
+    screen: getComputedStyle(document.querySelector('.phone .screen')).color,
+  }))
+  if (!got.panel.includes(want)) problems.push(`/ [${scheme}]: the panel shows ${got.panel}, not ${want}`)
+  if ([...new Set(pictures)].join() !== want) problems.push(`/ [${scheme}]: downloaded ${[...new Set(pictures)].join(', ') || 'no landscape'}, want only ${want}`)
+  const light = got.screen === 'rgb(17, 24, 39)'
+  if (light !== (scheme === 'light')) problems.push(`/ [${scheme}]: the phone screen's ink is ${got.screen}; it does not follow the theme`)
   await context.close()
-  const still = await browser.newContext({ viewport: phone, reducedMotion: 'reduce' })
+}
+
+// The hero's story card: the arrows step through three stories (wrapping both ways), only the shown one is
+// reachable (the others are inert and hidden from assistive tech), and the live region names it. The
+// script is a hashed inline module, so this also proves the hash in _headers is the one that runs.
+for (const viewport of [desktop, phone]) {
+  await visit('/', viewport, async (page, report) => {
+    interactions++
+    const story = () =>
+      page.evaluate(() => {
+        const card = document.querySelector('[data-story]')
+        const slides = [...card.querySelectorAll('[data-slide]')]
+        return {
+          on: slides.findIndex((s) => s.classList.contains('on')),
+          inert: slides.map((s) => s.inert),
+          hidden: slides.map((s) => s.getAttribute('aria-hidden')),
+          live: card.querySelector('[data-live]').textContent,
+        }
+      })
+    const start = await story()
+    if (start.on !== 0 || start.inert.join() !== 'false,true,true') report(`the story card does not start on story 1: ${JSON.stringify(start)}`)
+    await page.locator('[data-story] [data-step="1"]').click()
+    await page.waitForTimeout(200)
+    let s = await story()
+    if (s.on !== 1 || s.inert.join() !== 'true,false,true' || s.hidden.join() !== 'true,,true' || !/Story 2 of 3/.test(s.live))
+      report(`Next did not show story 2: ${JSON.stringify(s)}`)
+    await page.locator('[data-story] [data-step="-1"]').click()
+    await page.locator('[data-story] [data-step="-1"]').click()
+    await page.waitForTimeout(200)
+    s = await story()
+    if (s.on !== 2 || !/Story 3 of 3/.test(s.live)) report(`Previous from story 1 did not wrap to story 3: ${JSON.stringify(s)}`)
+    await page.locator('[data-story] [data-step="1"]').focus()
+    await page.keyboard.press('Enter')
+    await page.waitForTimeout(200)
+    s = await story()
+    if (s.on !== 0) report(`Enter on Next did not wrap to story 1: ${JSON.stringify(s)}`)
+  })
+}
+
+// The capabilities statement lights up word by word, once: dimmed ("armed") while below the fold, lit when it
+// scrolls into view, and never dimmed at all under reduced motion. It is real text the whole time.
+{
+  const context = await browser.newContext({ viewport: desktop })
+  const page = await context.newPage()
+  await page.goto(origin + '/', { waitUntil: 'networkidle' })
+  interactions++
+  const before = await page.evaluate(() => document.querySelector('[data-reveal]').dataset.reveal)
+  await page.locator('[data-reveal]').scrollIntoViewIfNeeded()
+  await page.waitForTimeout(1200)
+  const after = await page.evaluate(() => {
+    const el = document.querySelector('[data-reveal]')
+    const words = [...el.querySelectorAll('.w')]
+    return { state: el.dataset.reveal, first: getComputedStyle(words[0]).color, last: getComputedStyle(words.at(-1)).color, text: el.textContent.trim().slice(0, 30) }
+  })
+  if (before !== 'armed') problems.push(`/ [statement]: not armed below the fold (data-reveal=${before})`)
+  if (after.state !== 'lit' || after.first !== after.last) problems.push(`/ [statement]: did not light up fully once on screen: ${JSON.stringify(after)}`)
+  if (!/^Your background jobs/.test(after.text)) problems.push(`/ [statement]: the text is not there as text: ${after.text}`)
+  await context.close()
+  const still = await browser.newContext({ viewport: desktop, reducedMotion: 'reduce' })
   const quiet = await still.newPage()
-  await quiet.goto(origin + '/', { waitUntil: 'domcontentloaded' })
-  const s = await quiet.evaluate(() => { const h = document.querySelector('h1'); return { print: h.dataset.print ?? null, anim: getComputedStyle(h).animationName } })
-  if (s.print !== null || s.anim !== 'none') problems.push(`/ [hero title, reduced motion]: it still prints (${JSON.stringify(s)})`)
+  await quiet.goto(origin + '/', { waitUntil: 'networkidle' })
+  const s = await quiet.evaluate(() => document.querySelector('[data-reveal]').dataset.reveal)
+  if (s !== '') problems.push(`/ [statement, reduced motion]: it was dimmed for a reveal (data-reveal=${s})`)
   await still.close()
 }
 
+// The capabilities section's entrance plays once and finishes: armed below the fold, 'done' soon after it is
+// on screen with every piece visible and nothing left running; hovering a card replays its beat and ends. Under
+// reduced motion nothing is armed.
+{
+  const context = await browser.newContext({ viewport: desktop })
+  const page = await context.newPage()
+  await page.goto(origin + '/', { waitUntil: 'networkidle' })
+  interactions++
+  const play = () => page.evaluate(() => document.querySelector('[data-caps]').dataset.play ?? null)
+  const armed = await play()
+  await page.locator('[data-caps]').scrollIntoViewIfNeeded()
+  await page.waitForTimeout(1500)
+  const done = await play()
+  const shown = await page.evaluate(() => ['.caps .ui', '.caps .row', '.caps .pill', '.caps .figure', '.caps .what'].every((q) => [...document.querySelectorAll(q)].every((e) => getComputedStyle(e).opacity === '1')))
+  await page.locator('.caps .stat').hover()
+  await page.waitForTimeout(100)
+  const replaying = await page.evaluate(() => document.querySelector('.caps .stat').dataset.replay ?? null)
+  await page.waitForTimeout(1000)
+  const after = await page.evaluate(() => ({ replay: document.querySelector('.caps .stat').dataset.replay ?? null, running: document.getAnimations().filter((a) => a.playState === 'running').length }))
+  if (armed !== 'armed' || done !== 'done' || !shown) problems.push(`/ [capabilities]: entrance did not play through: ${JSON.stringify({ armed, done, shown })}`)
+  if (replaying !== 'on' || after.replay !== null || after.running) problems.push(`/ [capabilities]: hover replay did not play and end: ${JSON.stringify({ replaying, ...after })}`)
+  await context.close()
+  const still = await browser.newContext({ viewport: desktop, reducedMotion: 'reduce' })
+  const quiet = await still.newPage()
+  await quiet.goto(origin + '/', { waitUntil: 'networkidle' })
+  const q = await quiet.evaluate(() => document.querySelector('[data-caps]').dataset.play ?? null)
+  if (q !== null) problems.push(`/ [capabilities, reduced motion]: the entrance was armed (${q})`)
+  await still.close()
+}
+
+// The use cases: four cards whose diagrams play an entrance once (nodes in, lines drawn, packets travelling,
+// steps ticked), then loop: every 3.2 s each card replays its packet beat, but only while the section is on
+// screen (the timer stops off screen) and never the card under the pointer. Every beat is a finite animation:
+// nothing runs forever. Under reduced motion nothing is armed, hidden or looping.
+{
+  const context = await browser.newContext({ viewport: desktop })
+  const page = await context.newPage()
+  await page.goto(origin + '/', { waitUntil: 'networkidle' })
+  interactions++
+  const play = () => page.evaluate(() => document.querySelector('.uses').dataset.play ?? null)
+  const replays = () => page.evaluate(() => [...document.querySelectorAll('.uses .case')].map((c) => (c.dataset.replay ? 1 : 0)).join(''))
+  const armed = await play()
+  await page.locator('.uses .grid').scrollIntoViewIfNeeded()
+  await page.mouse.move(2, 2)
+  await page.waitForTimeout(2900)
+  const end = await page.evaluate(() => ({
+    play: document.querySelector('.uses').dataset.play,
+    cards: document.querySelectorAll('.uses .case').length,
+    hidden: [...document.querySelectorAll('.uses .node, .uses .edge .line, .uses .spec, .uses .list, .uses .journal')].filter((e) => getComputedStyle(e).opacity !== '1').length,
+  }))
+  if (armed !== 'armed' || end.play !== 'done' || end.cards !== 4 || end.hidden) problems.push(`/ [use cases]: entrance did not finish cleanly: ${JSON.stringify({ armed, ...end })}`)
+  // the first loop beat comes 1.2 s after the entrance, then every 3.2 s, on every card
+  let looped = ''
+  for (let i = 0; i < 30 && looped !== '1111'; i++) { await page.waitForTimeout(100); looped = await replays() }
+  if (looped !== '1111') problems.push(`/ [use cases]: the loop did not replay every card (${looped})`)
+  const forever = await page.evaluate(() => document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations === Infinity).length)
+  if (forever) problems.push(`/ [use cases]: ${forever} animation(s) run forever`)
+  // the hovered card holds still through the next beat while the others replay
+  await page.waitForTimeout(2000)
+  await page.locator('.uses .case').nth(1).hover()
+  let seen = ''
+  for (let i = 0; i < 40 && !/^1.11$/.test(seen); i++) { await page.waitForTimeout(100); seen = await replays() }
+  if (!/^1.11$/.test(seen) || seen[1] !== '0') {
+    // the hover itself may replay the card once; what matters is that the loop's beat leaves it alone
+    const later = await (async () => { let s = ''; for (let i = 0; i < 40 && s !== '1011'; i++) { await page.waitForTimeout(100); s = await replays() } return s })()
+    if (later !== '1011') problems.push(`/ [use cases]: the loop did not leave the hovered card still (${seen}, then ${later})`)
+  }
+  // off screen, the loop stops: no beat while the section is out of view
+  await page.mouse.move(2, 2)
+  await page.evaluate(() => scrollTo(0, 0))
+  await page.waitForTimeout(2200)
+  let offBeat = false
+  for (let i = 0; i < 40; i++) { await page.waitForTimeout(100); if ((await replays()) !== '0000') offBeat = true }
+  if (offBeat) problems.push('/ [use cases]: the loop kept beating while the section was off screen')
+  await context.close()
+  const still = await browser.newContext({ viewport: desktop, reducedMotion: 'reduce' })
+  const quiet = await still.newPage()
+  await quiet.goto(origin + '/', { waitUntil: 'networkidle' })
+  await quiet.locator('.uses .grid').scrollIntoViewIfNeeded()
+  await quiet.waitForTimeout(4600)
+  const q = await quiet.evaluate(() => ({ play: document.querySelector('.uses').dataset.play ?? null, hidden: [...document.querySelectorAll('.uses .node, .uses .spec')].filter((e) => getComputedStyle(e).opacity !== '1').length, replay: document.querySelectorAll('.uses [data-replay]').length }))
+  if (q.play !== null || q.hidden || q.replay) problems.push(`/ [use cases, reduced motion]: ${JSON.stringify(q)}`)
+  await still.close()
+}
+
+// The inspector section: an exclusive accordion (one feature open at a time, no script needed for that) whose
+// open feature picks the phone's screen; the keyboard opens features too. The footer's links are all there.
+{
+  const context = await browser.newContext({ viewport: desktop })
+  const page = await context.newPage()
+  await page.goto(origin + '/', { waitUntil: 'networkidle' })
+  interactions++
+  const state = () => page.evaluate(() => ({
+    open: [...document.querySelectorAll('.insp details')].map((d) => d.open).join(),
+    pane: [...document.querySelectorAll('.insp [data-pane]')].findIndex((e) => e.classList.contains('on')),
+  }))
+  const first = await state()
+  await page.locator('.insp summary').nth(2).click()
+  await page.waitForTimeout(250)
+  const clicked = await state()
+  await page.locator('.insp summary').nth(3).focus()
+  await page.keyboard.press('Enter')
+  await page.waitForTimeout(250)
+  const keyed = await state()
+  if (first.open !== 'true,false,false,false' || first.pane !== 0) problems.push(`/ [inspector]: does not start on the first feature: ${JSON.stringify(first)}`)
+  if (clicked.open !== 'false,false,true,false' || clicked.pane !== 2) problems.push(`/ [inspector]: a click did not switch feature and screen: ${JSON.stringify(clicked)}`)
+  if (keyed.open !== 'false,false,false,true' || keyed.pane !== 3) problems.push(`/ [inspector]: Enter did not switch feature and screen: ${JSON.stringify(keyed)}`)
+  const foot = await page.evaluate(() => ({ links: document.querySelectorAll('footer a').length, social: [...document.querySelectorAll('footer .social a')].map((a) => a.getAttribute('aria-label')) }))
+  if (foot.links < 10 || foot.social.length !== 3 || foot.social.some((l) => !l)) problems.push(`/ [footer]: links or labels missing: ${JSON.stringify(foot)}`)
+  await context.close()
+}
+
+// Crash-case micro-interactions: hovering a case plays its act-out exactly once (a finite animation) and
+// shows the survived check; reduced motion keeps the check but plays nothing.
+for (const reducedMotion of ['no-preference', 'reduce']) {
+  const context = await browser.newContext({ viewport: desktop, reducedMotion })
+  const page = await context.newPage()
+  await page.goto(origin + '/', { waitUntil: 'networkidle' })
+  interactions++
+  await page.locator('.mark.unplug').scrollIntoViewIfNeeded()
+  await page.locator('.mark.unplug').hover()
+  await page.waitForTimeout(60)
+  const played = await page.evaluate(() => document.getAnimations().filter((a) => a.animationName === 'act-unplug').map((a) => a.effect.getComputedTiming().iterations))
+  await page.waitForTimeout(500)
+  const ok = await page.evaluate(() => getComputedStyle(document.querySelector('.mark.unplug .ok')).opacity)
+  const label = reducedMotion === 'reduce' ? 'reduced motion' : 'motion'
+  if (reducedMotion === 'reduce' ? played.length !== 0 : played.join() !== '1') problems.push(`/ [crash cases, ${label}]: hover played ${JSON.stringify(played)}`)
+  if (ok !== '1') problems.push(`/ [crash cases, ${label}]: the survived check did not show on hover (opacity ${ok})`)
+  await context.close()
+}
+
+// The phone menu is a native <details>: it opens without any script and lists every header link.
+await visit('/', phone, async (page, report) => {
+  interactions++
+  await page.locator('header details summary').click()
+  const menu = await page.evaluate(() => {
+    const d = document.querySelector('header details')
+    return { open: d.open, links: [...d.querySelectorAll('a')].map((a) => a.textContent.trim()) }
+  })
+  if (!menu.open || menu.links.length < 6 || !menu.links.includes('Get started')) report(`the phone menu did not open with every link: ${JSON.stringify(menu)}`)
+})
+
 // Masks are cheap on an icon and expensive over a large area: no element bigger than 48px may be masked or
-// clipped by an SVG mask (the wordmark draws its gaps in its path instead).
+// clipped by an SVG mask.
 for (const viewport of [desktop, phone]) {
   await visit('/', viewport, async (page, report) => {
     interactions++
@@ -287,8 +497,8 @@ for (const viewport of [desktop, phone]) {
   })
 }
 
-// The header's one action. Durable Runner is self-hosted — there is no hosted app or account — so the
-// header keeps "See the source" and nothing else, decided before the first paint (CLS 0).
+// The header's one action goes to the docs' quick start (the product is self-hosted: no account buttons),
+// and nothing shifts after the first paint (CLS 0).
 {
   const context = await browser.newContext({ viewport: desktop })
   await context.addInitScript(() => {
@@ -303,47 +513,30 @@ for (const viewport of [desktop, phone]) {
   interactions++
   const header = await page.evaluate(() => ({
     auth: document.querySelectorAll('[data-auth]').length,
-    source: [...document.querySelectorAll('header a')].some((a) => /See the source/.test(a.textContent)),
+    start: [...document.querySelectorAll('header a')].find((a) => /Get started/.test(a.textContent))?.getAttribute('href') ?? null,
   }))
-  if (header.auth || !header.source) problems.push(`/ [header]: expected See the source and no account buttons: ${JSON.stringify(header)}`)
+  if (header.auth || !/\/quick-start\/$/.test(header.start ?? '')) problems.push(`/ [header]: expected Get started → the quick start and no account buttons: ${JSON.stringify(header)}`)
   const { csp, cls } = await page.evaluate(() => ({ csp: window.__csp.length, cls: window.__cls }))
   if (cls > 0) problems.push(`/ [header]: the page shifted (CLS ${cls.toFixed(4)})`)
   if (csp) problems.push(`/ [header]: ${csp} CSP violation(s)`)
   await context.close()
 }
 
-// The footer wordmark prints once when it scrolls into view, and the hero's icons stay where they are when the
-// pointer moves (no tracking, no running animation). The wordmark is still under reduced motion.
+// Nothing moves on its own: the hero stays where it is when the pointer moves, and no animation runs forever.
 await visit('/', desktop, async (page, report) => {
   interactions++
-  const before = await page.evaluate(() => document.querySelector('[data-wordmark]').dataset.print)
-  if (before !== 'go' && before !== 'armed') report(`the wordmark was not armed below the fold (data-print=${before})`)
-  await page.evaluate(() => document.querySelector('footer').scrollIntoView({ block: 'end' }))
-  await page.waitForTimeout(1500)
-  const after = await page.evaluate(() => { const w = document.querySelector('[data-wordmark]'); return { print: w.dataset.print, clip: getComputedStyle(w).clipPath } })
-  if (after.print !== 'go' || /100%/.test(after.clip)) report(`the wordmark never printed: ${JSON.stringify(after)}`)
-  await page.evaluate(() => scrollTo(0, 0))
-  const boxes = () => page.evaluate(() => [...document.querySelectorAll('[data-hero-field] > span')].map((e) => { const r = e.getBoundingClientRect(); return `${Math.round(r.left)},${Math.round(r.top)}` }).join(' '))
+  const boxes = () => page.evaluate(() => [...document.querySelectorAll('.phone, [data-story], h1')].map((e) => { const r = e.getBoundingClientRect(); return `${Math.round(r.left)},${Math.round(r.top)}` }).join(' '))
   const at = await boxes()
   await page.mouse.move(40, 200)
   await page.mouse.move(1300, 700, { steps: 10 })
   await page.waitForTimeout(300)
-  if ((await boxes()) !== at) report('the hero icons moved with the pointer')
+  if ((await boxes()) !== at) report('the hero moved with the pointer')
   const running = await page.evaluate(() => document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations === Infinity).length)
   if (running) report(`${running} animation(s) run forever`)
 })
-{
-  const context = await browser.newContext({ viewport: desktop, reducedMotion: 'reduce' })
-  const page = await context.newPage()
-  await page.goto(origin + '/', { waitUntil: 'networkidle' })
-  interactions++
-  const still = await page.evaluate(() => ({ print: document.querySelector('[data-wordmark]').dataset.print ?? null, running: document.getAnimations().length }))
-  if (still.print !== null || still.running) problems.push(`/ [reduced motion]: something still moves: ${JSON.stringify(still)}`)
-  await context.close()
-}
 
-// The fonts actually drawn (Chromium's own record of the platform font per node): titles in Geist Pixel,
-// text in Inter, both as the downloaded web fonts, never their local fallbacks.
+// The font actually drawn (Chromium's own record of the platform font per node): everything in the
+// Google Sans Flex web font, never a local fallback.
 for (const path of ['/']) {
   await visit(path, desktop, async (page, report) => {
     interactions++
@@ -352,11 +545,10 @@ for (const path of ['/']) {
     await cdp.send('CSS.enable')
     const { root } = await cdp.send('DOM.getDocument', { depth: -1 })
     const want = [
-      ['main h1', 'Geist Pixel'],
-      ['main p', 'Inter'],
-      ['nav a', 'Inter'],
-      ['footer p', 'Inter'],
-      ['footer a', 'Inter'],
+      ['main h1 .line', 'Google Sans Flex'],
+      ['main p', 'Google Sans Flex'],
+      ['nav a', 'Google Sans Flex'],
+      ['main h2', 'Google Sans Flex'],
     ]
     for (const [selector, family] of want) {
       // the first match that holds text of its own (Chromium reports only a node's direct text)
@@ -365,40 +557,30 @@ for (const path of ['/']) {
         if (el) el.setAttribute('data-font-probe', '')
         return !!el
       }, selector)
-      if (!found) continue
+      if (!found) { report(`${selector}: nothing to measure`); continue }
       const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: root.nodeId, selector: `${selector}[data-font-probe]` })
       if (!nodeId) continue
       const { fonts } = await cdp.send('CSS.getPlatformFontsForNode', { nodeId })
       const main = [...fonts].sort((a, b) => b.glyphCount - a.glyphCount)[0]
       await page.evaluate(() => document.querySelectorAll('[data-font-probe]').forEach((e) => e.removeAttribute('data-font-probe')))
-      if (!main || main.familyName !== family || !main.isCustomFont) report(`${selector} is drawn in ${main ? `${main.familyName}${main.isCustomFont ? '' : ' (local)'}` : 'nothing'}, not the ${family} web font`)
+      if (!main || !main.familyName.startsWith('Google Sans Flex') || !main.isCustomFont) report(`${selector} is drawn in ${main ? `${main.familyName}${main.isCustomFont ? '' : ' (local)'}` : 'nothing'}, not the ${family} web font`)
     }
   })
 }
 
-// The home page's layout system: the header and every section's content column start at the same x (within 1 px), and every
-// gap between consecutive sections (hero card, surfaces strip, cards, statement, footer panel) is the
-// same (within 4 px), at desktop and phone widths.
-for (const viewport of [desktop, phone, { width: 360, height: 780 }]) {
+// No page scrolls sideways at any width, and the header and the hero share one content column.
+for (const viewport of [desktop, { width: 1024, height: 768 }, { width: 820, height: 1180 }, phone, { width: 360, height: 780 }]) {
   await visit('/', viewport, async (page, report) => {
     interactions++
-    const m = await page.evaluate(() => {
-      const sections = [...document.querySelectorAll('main > section')]
-      const panel = document.querySelector('footer > div')
-      const boxes = [sections[0].firstElementChild, ...sections.slice(1), panel].map((e) => e.getBoundingClientRect())
-      const gaps = boxes.slice(1).map((b, i) => Math.round(b.top - boxes[i].bottom))
-      const lefts = [document.querySelector('header nav > div'), ...sections.slice(1).map((s) => s.firstElementChild), panel.firstElementChild].map((e) => Math.round(e.getBoundingClientRect().left))
-      return { gaps, lefts }
-    })
-    if (Math.max(...m.lefts) - Math.min(...m.lefts) > 1) report(`home sections start at different x: ${m.lefts.join(', ')}`)
-    if (Math.max(...m.gaps) - Math.min(...m.gaps) > 4) report(`home section gaps differ: ${m.gaps.join(', ')}`)
+    const m = await page.evaluate(() => ({
+      scroll: document.scrollingElement.scrollWidth,
+      width: innerWidth,
+      lefts: [document.querySelector('header > div'), document.querySelector('.hero > div')].map((e) => Math.round(e.getBoundingClientRect().left)),
+    }))
+    if (m.scroll > m.width) report(`the page scrolls sideways (${m.scroll}px of content in ${m.width}px)`)
+    if (m.lefts[0] !== m.lefts[1]) report(`the header and the hero start at different x: ${m.lefts.join(', ')}`)
   })
 }
-
-await visit('/', phone, async (page, report) => {
-  await page.locator('[data-nav-toggle]').click()
-  await expectAttr(page, report, '[data-nav-toggle]', 'aria-expanded', 'true')
-})
 
 await browser.close()
 server.close()

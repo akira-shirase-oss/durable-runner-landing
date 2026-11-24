@@ -26,9 +26,8 @@
 //          scroll, wheel or touch moves. One-time effects (the title and wordmark print, the theme toggle's view
 //          transition on click) are fine.
 // app      Durable Runner is self-hosted — there is no hosted app or account area, so no page links to one
-// fonts    the site uses exactly two webfonts: every @font-face is Geist Pixel or Inter (or their local,
-//          metric-matched fallbacks), every font file built is one of their two woff2 files, and nothing
-//          links to or preloads any other font.
+// fonts    the site uses exactly one webfont: every @font-face is Google Sans Flex, every font file built is
+//          its one woff2 file, and nothing links to or preloads any other font.
 // redirects dist/_redirects matches public/_redirects; every rule is a permanent redirect from a plain
 //          path that is no longer built to a built page, never to another rule's source; a retired post
 //          address has a rule for both spellings (with and without the trailing slash); and no page, the
@@ -648,10 +647,10 @@ function checkCode() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// fonts: two families, nothing else downloaded
+// fonts: one family, nothing else downloaded
 
-const FONT_FAMILIES = new Set(['Geist Pixel', 'Inter', 'Geist Pixel Fallback', 'Inter Fallback'])
-const FONT_FILES = new Set(['fonts/geist-pixel-latin.woff2', 'fonts/inter-latin-var.woff2'])
+const FONT_FAMILIES = new Set(['Google Sans Flex'])
+const FONT_FILES = new Set(['fonts/google-sans-flex-latin.woff2'])
 
 function checkFonts() {
   let faces = 0
@@ -659,10 +658,10 @@ function checkFonts() {
     for (const face of sheet.text.match(/@font-face\s*{[^}]*}/g) ?? []) {
       faces++
       const family = face.match(/font-family:\s*["']?([^;"'}]+)["']?/)?.[1]?.trim()
-      if (!FONT_FAMILIES.has(family)) fail('fonts', `${sheet.file}: @font-face for "${family}"; the site uses Geist Pixel and Inter only`)
+      if (!FONT_FAMILIES.has(family)) fail('fonts', `${sheet.file}: @font-face for "${family}"; the site uses Google Sans Flex only`)
       for (const m of face.matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/g)) {
         const file = m[1].replace(/^\//, '')
-        if (!FONT_FILES.has(file)) fail('fonts', `${sheet.file}: @font-face loads ${m[1]}, which is not one of the two font files`)
+        if (!FONT_FILES.has(file)) fail('fonts', `${sheet.file}: @font-face loads ${m[1]}, which is not the site's font file`)
       }
     }
   }
@@ -749,5 +748,5 @@ console.log(`  jsonld   ok: ${jsonLdBlocks} JSON-LD blocks, all valid JSON with 
 console.log(`  code     ok: ${codeTokens} code tokens coloured by the theme, all at AA on the light and dark code surfaces`)
 console.log(`  light    ok: ${lightChecked} stylesheets and scripts: no backdrop-filter, no endless animation, no move or scroll listeners`)
 console.log(`  app      ok: ${appCheck.pages} pages checked; no hosted app or account links (the product is self-hosted)`)
-console.log(`  fonts    ok: ${fontFaces} @font-face rules, all Geist Pixel or Inter; no other font file or preload`)
+console.log(`  fonts    ok: ${fontFaces} @font-face rules, all Google Sans Flex; no other font file or preload`)
 console.log(`  redirects ok: ${redirectRules} permanent redirects to built pages; nothing links to a retired address`)
