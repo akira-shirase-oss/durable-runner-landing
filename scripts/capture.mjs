@@ -5,6 +5,8 @@
 //   npm run build && npm run capture                  # all four: 1440/390 x light/dark
 //   node scripts/capture.mjs --only 1440-light        # one shot
 //   node scripts/capture.mjs --only 1440-light,390-dark
+//   node scripts/capture.mjs --path /terms/           # another page: shots named terms-1440-light.png…
+//   node scripts/capture.mjs --element '#pricing'     # one section on the page: pricing-1440-light.png…
 //
 // Playwright is not a dependency of this repo. Install it (npm i -D playwright && npx playwright
 // install chromium), or point PLAYWRIGHT_MODULE at an existing node_modules/playwright directory.
@@ -17,6 +19,15 @@ const root = fileURLToPath(new URL('..', import.meta.url))
 const dist = resolve(root, 'dist')
 const outDir = resolve(root, 'shots')
 const only = process.argv.indexOf('--only') > 0 ? process.argv[process.argv.indexOf('--only') + 1].split(',') : null
+const argValue = (name, fallback = null) => {
+  const i = process.argv.indexOf(name)
+  return i > 0 ? process.argv[i + 1] : fallback
+}
+const pathArg = argValue('--path', '/')
+const elementArg = argValue('--element')
+// File names stay `1440-light.png` for the home page; other pages and element shots get a prefix.
+const slug = (s) => s.replace(/^\/+|\/+$/g, '').replace(/^[#.]/, '').replace(/[^\w-]+/g, '-')
+const stem = elementArg ? `${slug(elementArg)}-` : pathArg === '/' ? '' : `${slug(pathArg)}-`
 
 if (!existsSync(join(dist, 'index.html'))) {
   console.error('capture: no build at dist/. Run npm run build first.')
@@ -96,7 +107,7 @@ for (const shot of shots) {
   const page = await context.newPage()
   page.on('pageerror', (e) => console.error(`capture ${shot.name}: page error ${e.message}`))
   page.on('requestfailed', (r) => console.error(`capture ${shot.name}: request failed ${r.url()}`))
-  await page.goto(`${origin}/`, { waitUntil: 'load' })
+  await page.goto(`${origin}${pathArg}`, { waitUntil: 'load' })
   // Scroll through once so every below-fold asset is fetched and the fonts are settled, then back to the top.
   await page.evaluate(async () => {
     for (let y = 0; y < document.body.scrollHeight; y += 600) {
@@ -109,8 +120,15 @@ for (const shot of shots) {
   await page.evaluate(() => document.fonts.ready)
   // Let the hero's print animation finish so the title is fully drawn in the shot.
   await page.waitForTimeout(1600)
-  const file = join(outDir, `${shot.name}.png`)
-  await page.screenshot({ path: file, fullPage: true })
+  const file = join(outDir, `${stem}${shot.name}.png`)
+  if (elementArg) {
+    const element = page.locator(elementArg)
+    await element.scrollIntoViewIfNeeded()
+    await page.waitForTimeout(400)
+    await element.screenshot({ path: file })
+  } else {
+    await page.screenshot({ path: file, fullPage: true })
+  }
   console.log(`capture: ${file}`)
   await context.close()
 }

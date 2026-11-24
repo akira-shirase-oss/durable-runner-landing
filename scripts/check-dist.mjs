@@ -27,6 +27,10 @@
 //          scroll, wheel or touch moves. One-time effects (the title and wordmark print, the theme toggle's view
 //          transition on click) are fine.
 // app      Durable Runner is self-hosted — there is no hosted app or account area, so no page links to one
+// pricing  the home page has a #pricing section whose plans link to the docs quick start and the
+//          repository, and nothing links to a sign-up or account page (there is no app yet)
+// legal    the legal drafts live outside src/pages until the contact address is decided; a draft
+//          carrying CONTACT_ADDRESS_TBD is never built at its address, and the token never ships
 // fonts    the site uses exactly one webfont: every @font-face is Google Sans Flex, every font file built is
 //          its one woff2 file, and nothing links to or preloads any other font.
 // redirects dist/_redirects matches public/_redirects; every rule is a permanent redirect from a plain
@@ -38,7 +42,7 @@
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { homedir, userInfo } from 'node:os'
-import { extname, join, relative, resolve, sep } from 'node:path'
+import { basename, extname, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
@@ -693,6 +697,68 @@ function checkApp() {
 }
 
 // ---------------------------------------------------------------------------------------------
+// pricing: the section exists, its two plans link where they say they do, and none invents a sign-up
+
+function checkPricing() {
+  const home = html.find((p) => urlOf(p.file) === '/')
+  if (!home) return void fail('pricing', 'no home page in the build')
+  const section = /<section\b[^>]*\bid="pricing"[^>]*>[\s\S]*?<\/section>/.exec(home.text)?.[0]
+  if (!section) return void fail('pricing', 'index.html has no <section id="pricing">; the nav and footer link to it')
+
+  // The section's own claims: self-hosted goes to the quick start, the cloud plan to the repository.
+  // There is no hosted app, so nothing may link to a sign-up, login or billing address.
+  const hrefs = tagsOf(section)
+    .filter((t) => t.name === 'a')
+    .map((t) => t.attrs.get('href') ?? '')
+  if (!hrefs.some((h) => /\/quick-start\/?$/.test(h))) {
+    fail('pricing', 'no plan links to the docs quick start (…/quick-start/)')
+  }
+  if (!hrefs.includes('https://github.com/akira-shirase-oss/durable-runner')) {
+    fail('pricing', 'the cloud plan does not link to the repository')
+  }
+  const app = hrefs.find((h) => /sign-?up|register|log-?in|sign-?in|checkout|billing|subscribe|app\./i.test(h))
+  if (app) fail('pricing', `a plan links to ${app}; there is no hosted app or sign-up yet`)
+
+  // The nav and footer both carry the section's anchor, and the anchor resolves (checked in links).
+  const anchor = /<a\b[^>]*href="(?:\/#|#)pricing"/
+  const head = /<header[\s\S]*?<\/header>/.exec(home.text)?.[0] ?? ''
+  const foot = /<footer[\s\S]*?<\/footer>/.exec(home.text)?.[0] ?? ''
+  if (!anchor.test(head)) fail('pricing', 'the header nav does not link to #pricing')
+  if (!anchor.test(foot)) fail('pricing', 'the footer does not link to #pricing')
+  return hrefs.length
+}
+
+// ---------------------------------------------------------------------------------------------
+// legal: the draft legal pages live outside src/pages (drafts/legal/) while the operator's contact
+// address is undecided. A draft carrying CONTACT_ADDRESS_TBD must not be built at its address, and
+// the placeholder must never appear anywhere in the build — an unlinked page is still public.
+
+const CONTACT_TOKEN = 'CONTACT_ADDRESS_TBD'
+const LEGAL_DRAFTS = join(root, 'drafts', 'legal')
+
+function checkLegal() {
+  // A draft is a file that could become a page; the README legitimately names the token forever.
+  const drafts = existsSync(LEGAL_DRAFTS)
+    ? readdirSync(LEGAL_DRAFTS, { recursive: true })
+        .map((f) => join(LEGAL_DRAFTS, f))
+        .filter((f) => /\.(astro|mdx?|html)$/.test(f) && basename(f) !== 'README.md')
+    : []
+  const pending = drafts.filter((f) => readFileSync(f, 'utf8').includes(CONTACT_TOKEN))
+  const built = new Set(html.map((p) => urlOf(p.file)))
+  for (const file of pending) {
+    const route = `/${basename(file, extname(file))}/`
+    if (built.has(route)) {
+      fail('legal', `${relative(root, file)} still carries ${CONTACT_TOKEN}, but its page is built at ${route}; replace the token before publishing`)
+    }
+  }
+  for (const file of files) {
+    if (!TEXT.has(extname(file)) && !file.endsWith('_headers')) continue
+    if (readFileSync(file, 'utf8').includes(CONTACT_TOKEN)) fail('legal', `${rel(file)} contains ${CONTACT_TOKEN}`)
+  }
+  return pending.length
+}
+
+// ---------------------------------------------------------------------------------------------
 // light: nothing that keeps painting while the visitor does nothing, or runs on every pointer or scroll move
 
 function checkLight() {
@@ -737,6 +803,8 @@ const redirectRules = checkRedirects()
 const codeTokens = checkCode()
 const fontFaces = checkFonts()
 const appCheck = checkApp()
+const pricingLinks = checkPricing()
+const legalDrafts = checkLegal()
 const lightChecked = checkLight()
 
 if (failures.length) {
@@ -754,5 +822,7 @@ console.log(`  jsonld   ok: ${jsonLdBlocks} JSON-LD blocks, all valid JSON with 
 console.log(`  code     ok: ${codeTokens} code tokens coloured by the theme, all at AA on the light and dark code surfaces`)
 console.log(`  light    ok: ${lightChecked} stylesheets and scripts: no backdrop-filter, no endless animation, no move or scroll listeners`)
 console.log(`  app      ok: ${appCheck.pages} pages checked; no hosted app or account links (the product is self-hosted)`)
+console.log(`  pricing  ok: #pricing exists, ${pricingLinks} plan links resolve to the quick start and the repository, no sign-up links`)
+console.log(`  legal    ok: ${legalDrafts} legal draft(s) carry ${CONTACT_TOKEN}; none built, and the token ships nowhere`)
 console.log(`  fonts    ok: ${fontFaces} @font-face rules, all Google Sans Flex; no other font file or preload`)
 console.log(`  redirects ok: ${redirectRules} permanent redirects to built pages; nothing links to a retired address`)

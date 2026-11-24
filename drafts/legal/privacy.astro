@@ -1,0 +1,171 @@
+---
+// Draft privacy notice for the hosted Durable Runner beta. Unlinked, noindex and out of the sitemap on
+// purpose: the operator's contact address is not decided, so every contact point reads
+// CONTACT_ADDRESS_TBD and scripts/check-dist.mjs fails if that token ever reaches a linked or
+// sitemapped page.
+import Base from '../layouts/Base.astro'
+import SiteHeader from '../components/SiteHeader.astro'
+import SiteFooter from '../components/SiteFooter.astro'
+
+const title = 'Privacy notice (draft) — Durable Runner Cloud'
+const description =
+  'Draft privacy notice for the hosted Durable Runner beta: what is stored, for how long, the sub-processors, and how deletion works.'
+---
+
+<Base title={title} description={description} noindex>
+  <SiteHeader />
+  <main id="main" class="doc">
+    <header class="head">
+      <p class="draft">Draft</p>
+      <h1>Privacy notice</h1>
+      <p class="sub">For the hosted Durable Runner beta. Not yet in force — sign-ups have not opened.</p>
+    </header>
+
+    <article class="body">
+      <h2>What this covers</h2>
+      <p>
+        This notice is about the hosted Durable Runner service run by Akira Shirase OSS, an open-source
+        project. It does not cover the self-hosted runner: when you run it yourself, your data never leaves
+        your machines.
+      </p>
+
+      <h2>What the service stores</h2>
+      <ul>
+        <li>your account email address,</li>
+        <li>a hash of your password — never the password itself,</li>
+        <li>your workspace records (names, settings, members),</li>
+        <li>the inputs and outputs of your jobs, recorded in the journal,</li>
+        <li>the handler URLs you register for the runner to call,</li>
+        <li>service logs needed to operate and debug the service.</li>
+      </ul>
+
+      <h2>What the service does not do</h2>
+      <p>
+        No ads, no tracking, no analytics, and no selling or sharing of your data for marketing. The site
+        sends no data to third parties when you read this page.
+      </p>
+
+      <h2>How long it is kept</h2>
+      <p>
+        Data is kept only while it is needed to run the service. Per-workspace limits and retention follow
+        the published plan limits, which will be published on this site before sign-ups open — measured, not
+        guessed.
+      </p>
+
+      <h2>Sub-processors</h2>
+      <p>The service runs on, and stores data with:</p>
+      <ul>
+        <li>Cloudflare — hosting and content delivery,</li>
+        <li>DigitalOcean — compute,</li>
+        <li>Neon — Postgres,</li>
+        <li>Resend — account email.</li>
+      </ul>
+
+      <h2>Deletion</h2>
+      <p>
+        Deleting a workspace removes its records, including its journal data. You can delete your account, or
+        ask for your data to be deleted or exported, by writing to CONTACT_ADDRESS_TBD. Data in encrypted
+        backups expires with the retention above.
+      </p>
+
+      <h2>Changes to this notice</h2>
+      <p>
+        This draft will be replaced by a final notice before sign-ups open. Later changes are posted on this
+        page with their date; material changes will be announced in advance.
+      </p>
+
+      <h2>Contact</h2>
+      <p>Questions about this notice or your data: CONTACT_ADDRESS_TBD</p>
+
+      <p class="fine">
+        This page is a draft written in plain language and is not legal advice. It will be finalised, with a
+        contact address, before the hosted beta opens.
+      </p>
+    </article>
+  </main>
+  <SiteFooter />
+</Base>
+
+<style>
+  .doc {
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 64px 16px 96px;
+  }
+  .head {
+    margin-bottom: 40px;
+  }
+  .draft {
+    display: inline-flex;
+    align-items: center;
+    height: 26px;
+    margin: 0;
+    padding: 0 11px;
+    border-radius: 13px;
+    background: var(--c-state-retry-bg);
+    font-size: 12.5px;
+    font-weight: 550;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--c-state-retry);
+  }
+  h1 {
+    margin: 18px 0 0;
+    font-size: 44px;
+    font-weight: 480;
+    line-height: 52px;
+    letter-spacing: -0.028em;
+    color: var(--c-ink);
+  }
+  .sub {
+    margin: 12px 0 0;
+    font-size: 16px;
+    line-height: 24px;
+    color: var(--c-body);
+  }
+  .body h2 {
+    margin: 36px 0 0;
+    font-size: 21px;
+    font-weight: 500;
+    line-height: 28px;
+    letter-spacing: -0.01em;
+    color: var(--c-ink);
+  }
+  .body p,
+  .body li {
+    font-size: 15.5px;
+    line-height: 25px;
+    letter-spacing: 0.002em;
+    color: var(--c-body);
+  }
+  .body p {
+    margin: 12px 0 0;
+  }
+  .body ul {
+    display: grid;
+    gap: 8px;
+    margin: 12px 0 0;
+    padding-left: 22px;
+  }
+  .body li::marker {
+    color: var(--c-brand-deep);
+  }
+  .body p.fine {
+    margin-top: 44px;
+    padding-top: 24px;
+    border-top: 1px solid var(--c-line);
+    font-size: 13.5px;
+    line-height: 20px;
+  }
+
+  @media (max-width: 639px) {
+    .doc {
+      padding-top: 48px;
+    }
+    h1 {
+      font-size: 34px;
+      line-height: 42px;
+    }
+  }
+</style>

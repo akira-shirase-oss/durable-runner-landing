@@ -446,6 +446,77 @@ for (const viewport of [desktop, phone]) {
   await context.close()
 }
 
+// The pricing section: the nav anchor exists, the entrance plays once and finishes (armed → done, both
+// plans visible), and each plan's claim resolves — self-hosted to the docs quick start, the cloud plan to
+// the repository; nothing links to a sign-up (there is no app). Checked in light and dark, and the card
+// colour follows the theme.
+for (const scheme of ['light', 'dark']) {
+  const context = await browser.newContext({ viewport: desktop, colorScheme: scheme })
+  await context.addInitScript(() => {
+    window.__csp = []
+    document.addEventListener('securitypolicyviolation', (e) =>
+      window.__csp.push(`${e.effectiveDirective} blocked ${e.blockedURI || 'inline'} (${e.sourceFile || 'page'}:${e.lineNumber})`),
+    )
+  })
+  const page = await context.newPage()
+  const report = (what) => problems.push(`/ [pricing ${scheme}]: ${what}`)
+  page.on('pageerror', (e) => report(`page error: ${e.message}`))
+  page.on('console', (m) => m.type() === 'error' && report(`console error: ${m.text()}`))
+  page.on('requestfailed', (r) => report(`request failed: ${r.url()} (${r.failure()?.errorText})`))
+  page.on('response', (r) => r.status() >= 400 && report(`HTTP ${r.status()} for ${r.url()}`))
+  await page.goto(origin + '/', { waitUntil: 'networkidle' })
+  interactions++
+  const armed = await page.evaluate(() => document.querySelector('#pricing').dataset.play ?? null)
+  await page.locator('#pricing').scrollIntoViewIfNeeded()
+  await page.waitForTimeout(1700)
+  const s = await page.evaluate(() => {
+    const section = document.querySelector('#pricing')
+    return {
+      csp: window.__csp,
+      play: section.dataset.play ?? null,
+      plans: section.querySelectorAll('.plan').length,
+      shown: [...section.querySelectorAll('.plan, .soon')].every((e) => getComputedStyle(e).opacity === '1'),
+      links: [...section.querySelectorAll('a')].map((a) => a.getAttribute('href')),
+      card: getComputedStyle(section.querySelector('.plan')).backgroundColor,
+      running: section.getAnimations({ subtree: true }).filter((a) => a.playState === 'running').length,
+    }
+  })
+  for (const v of s.csp) report(`CSP violation: ${v}`)
+  if (armed !== 'armed' || s.play !== 'done' || s.plans !== 2 || !s.shown) {
+    report(`the entrance did not play through: ${JSON.stringify({ armed, play: s.play, plans: s.plans, shown: s.shown })}`)
+  }
+  if (!s.links.some((h) => /\/quick-start\/?$/.test(h ?? ''))) report('no plan links to the docs quick start')
+  if (!s.links.includes('https://github.com/akira-shirase-oss/durable-runner')) report('the cloud plan does not link to the repository')
+  const app = s.links.find((h) => /sign-?up|register|log-?in|sign-?in|checkout|billing|subscribe|app\./i.test(h ?? ''))
+  if (app) report(`a plan links to a sign-up or app address: ${app}`)
+  const want = scheme === 'dark' ? 'rgb(22, 24, 27)' : 'rgb(255, 255, 255)'
+  if (s.card !== want) report(`the plan card is ${s.card}, not the ${scheme} card ${want}`)
+  if (s.running) report(`${s.running} animation(s) still running after the entrance`)
+  // the nav anchor lands on the section
+  await page.goto(origin + '/#pricing', { waitUntil: 'domcontentloaded' })
+  await page.waitForTimeout(200)
+  const near = await page.evaluate(() => {
+    const r = document.querySelector('#pricing').getBoundingClientRect()
+    return r.top < innerHeight && r.bottom > 0
+  })
+  if (!near) report('/#pricing did not bring the section into view')
+  await context.close()
+}
+// At phone width the plans stack and nothing scrolls sideways.
+await visit('/', phone, async (page, report) => {
+  interactions++
+  await page.locator('#pricing').scrollIntoViewIfNeeded()
+  const m = await page.evaluate(() => {
+    const tops = [...document.querySelectorAll('#pricing .plan')].map((e) => Math.round(e.getBoundingClientRect().top))
+    return { scroll: document.scrollingElement.scrollWidth, width: innerWidth, tops }
+  })
+  if (m.scroll > m.width) report(`the page scrolls sideways at 390px (${m.scroll}px of content)`)
+  if (!(m.tops.length === 2 && m.tops[1] > m.tops[0])) report(`the two plans do not stack at 390px (tops ${m.tops})`)
+})
+
+// The legal drafts live outside src/pages (drafts/legal/), so nothing serves them — check-dist proves
+// the token never ships; there is no draft page to visit here.
+
 // Crash-case micro-interactions: hovering a case plays its act-out exactly once (a finite animation) and
 // shows the survived check; reduced motion keeps the check but plays nothing.
 for (const reducedMotion of ['no-preference', 'reduce']) {
