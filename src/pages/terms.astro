@@ -1,0 +1,163 @@
+---
+// Draft terms for the hosted Durable Runner beta. Unlinked, noindex and out of the sitemap on purpose:
+// the operator's contact address is not decided, so every contact point reads CONTACT_ADDRESS_TBD and
+// scripts/check-dist.mjs fails if that token ever reaches a linked or sitemapped page.
+import Base from '../layouts/Base.astro'
+import SiteHeader from '../components/SiteHeader.astro'
+import SiteFooter from '../components/SiteFooter.astro'
+
+const title = 'Terms of service (draft) — Durable Runner Cloud'
+const description =
+  'Draft terms for the hosted Durable Runner beta: a free beta provided as is, acceptable use, and how changes take effect.'
+---
+
+<Base title={title} description={description} noindex>
+  <SiteHeader />
+  <main id="main" class="doc">
+    <header class="head">
+      <p class="draft">Draft</p>
+      <h1>Terms of service</h1>
+      <p class="sub">For the hosted Durable Runner beta. Not yet in force — sign-ups have not opened.</p>
+    </header>
+
+    <article class="body">
+      <h2>Who runs this</h2>
+      <p>
+        Durable Runner is made by Akira Shirase OSS, an open-source project. The runner itself is free and MIT
+        licensed, and you can always self-host it. These terms cover the hosted service the project is
+        building, which will open as a free beta.
+      </p>
+
+      <h2>The beta</h2>
+      <p>
+        The hosted service is provided <strong>as is</strong> during the beta: no uptime promise, no service
+        level agreement, and no guarantee that any feature stays. Features and limits may change, and the beta
+        may pause or end. Usage limits are being measured and will be published on this site before sign-ups
+        open — we will not ask anyone to sign up against limits they cannot read first.
+      </p>
+
+      <h2>Acceptable use</h2>
+      <p>Use the service to run your own background jobs. Do not:</p>
+      <ul>
+        <li>abuse the service, other users, or shared capacity,</li>
+        <li>
+          register handlers that point at systems you may not test — handlers are the endpoints the runner
+          calls on your behalf, so attacking third parties through them is prohibited,
+        </li>
+        <li>store or process illegal content,</li>
+        <li>try to bypass account, workspace or rate limits.</li>
+      </ul>
+      <p>We may suspend a workspace or account that breaks these rules.</p>
+
+      <h2>Your data</h2>
+      <p>
+        Your jobs, their inputs and outputs, and your workspace records stay yours. What the service stores is
+        described in the draft privacy notice on this site. You can delete a workspace at any time; deleting it
+        removes its records.
+      </p>
+
+      <h2>Changes to these terms</h2>
+      <p>
+        This draft will be replaced by final terms before sign-ups open. Later changes are posted on this page
+        with their date; material changes will be announced in advance, not applied silently.
+      </p>
+
+      <h2>Contact</h2>
+      <p>Questions about these terms: CONTACT_ADDRESS_TBD</p>
+
+      <p class="fine">
+        This page is a draft written in plain language and is not legal advice. It will be finalised, with a
+        contact address, before the hosted beta opens.
+      </p>
+    </article>
+  </main>
+  <SiteFooter />
+</Base>
+
+<style>
+  .doc {
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 64px 16px 96px;
+  }
+  .head {
+    margin-bottom: 40px;
+  }
+  .draft {
+    display: inline-flex;
+    align-items: center;
+    height: 26px;
+    margin: 0;
+    padding: 0 11px;
+    border-radius: 13px;
+    background: var(--c-state-retry-bg);
+    font-size: 12.5px;
+    font-weight: 550;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--c-state-retry);
+  }
+  h1 {
+    margin: 18px 0 0;
+    font-size: 44px;
+    font-weight: 480;
+    line-height: 52px;
+    letter-spacing: -0.028em;
+    color: var(--c-ink);
+  }
+  .sub {
+    margin: 12px 0 0;
+    font-size: 16px;
+    line-height: 24px;
+    color: var(--c-body);
+  }
+  .body h2 {
+    margin: 36px 0 0;
+    font-size: 21px;
+    font-weight: 500;
+    line-height: 28px;
+    letter-spacing: -0.01em;
+    color: var(--c-ink);
+  }
+  .body p,
+  .body li {
+    font-size: 15.5px;
+    line-height: 25px;
+    letter-spacing: 0.002em;
+    color: var(--c-body);
+  }
+  .body p {
+    margin: 12px 0 0;
+  }
+  .body ul {
+    display: grid;
+    gap: 8px;
+    margin: 12px 0 0;
+    padding-left: 22px;
+  }
+  .body li::marker {
+    color: var(--c-brand-deep);
+  }
+  .body strong {
+    font-weight: 550;
+    color: var(--c-ink-soft);
+  }
+  .body p.fine {
+    margin-top: 44px;
+    padding-top: 24px;
+    border-top: 1px solid var(--c-line);
+    font-size: 13.5px;
+    line-height: 20px;
+  }
+
+  @media (max-width: 639px) {
+    .doc {
+      padding-top: 48px;
+    }
+    h1 {
+      font-size: 34px;
+      line-height: 42px;
+    }
+  }
+</style>
