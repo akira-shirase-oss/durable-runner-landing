@@ -29,8 +29,8 @@
 // app      Durable Runner is self-hosted — there is no hosted app or account area, so no page links to one
 // pricing  the home page has a #pricing section whose plans link to the docs quick start and the
 //          repository, and nothing links to a sign-up or account page (there is no app yet)
-// legal    the draft legal pages are marked noindex and keep out of links and the sitemap, so the
-//          CONTACT_ADDRESS_TBD placeholder never ships on a reachable page
+// legal    the legal drafts live outside src/pages until the contact address is decided; a draft
+//          carrying CONTACT_ADDRESS_TBD is never built at its address, and the token never ships
 // fonts    the site uses exactly one webfont: every @font-face is Google Sans Flex, every font file built is
 //          its one woff2 file, and nothing links to or preloads any other font.
 // redirects dist/_redirects matches public/_redirects; every rule is a permanent redirect from a plain
@@ -42,7 +42,7 @@
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { homedir, userInfo } from 'node:os'
-import { extname, join, relative, resolve, sep } from 'node:path'
+import { basename, extname, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
@@ -729,52 +729,33 @@ function checkPricing() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// legal: the draft terms and privacy pages carry a contact placeholder; it must never sit on a page a
-// visitor or a crawler can reach — noindex, out of the sitemap, and the target of no link.
+// legal: the draft legal pages live outside src/pages (drafts/legal/) while the operator's contact
+// address is undecided. A draft carrying CONTACT_ADDRESS_TBD must not be built at its address, and
+// the placeholder must never appear anywhere in the build — an unlinked page is still public.
 
 const CONTACT_TOKEN = 'CONTACT_ADDRESS_TBD'
-const LEGAL_DRAFTS = ['/terms/', '/privacy/']
+const LEGAL_DRAFTS = join(root, 'drafts', 'legal')
 
 function checkLegal() {
-  // Reachable = in the sitemap or the target of any same-origin <a>/<link> on a built page.
-  const reachable = new Set()
-  const addPath = (pathname) => reachable.add(pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname)
-  const sitemap = join(dist, 'sitemap.xml')
-  if (existsSync(sitemap)) {
-    for (const m of readFileSync(sitemap, 'utf8').matchAll(/<loc>([^<]+)<\/loc>/g)) {
-      addPath(new URL(decode(m[1])).pathname)
+  // A draft is a file that could become a page; the README legitimately names the token forever.
+  const drafts = existsSync(LEGAL_DRAFTS)
+    ? readdirSync(LEGAL_DRAFTS, { recursive: true })
+        .map((f) => join(LEGAL_DRAFTS, f))
+        .filter((f) => /\.(astro|mdx?|html)$/.test(f) && basename(f) !== 'README.md')
+    : []
+  const pending = drafts.filter((f) => readFileSync(f, 'utf8').includes(CONTACT_TOKEN))
+  const built = new Set(html.map((p) => urlOf(p.file)))
+  for (const file of pending) {
+    const route = `/${basename(file, extname(file))}/`
+    if (built.has(route)) {
+      fail('legal', `${relative(root, file)} still carries ${CONTACT_TOKEN}, but its page is built at ${route}; replace the token before publishing`)
     }
   }
-  for (const page of html) {
-    for (const tag of tagsOf(page.text)) {
-      if (tag.name !== 'a' && tag.name !== 'link') continue
-      const raw = tag.attrs.get('href')
-      if (!raw || !sameOrigin(raw) || raw.startsWith('#')) continue
-      addPath(new URL(raw, `${site}${urlOf(page.file)}`).pathname)
-    }
+  for (const file of files) {
+    if (!TEXT.has(extname(file)) && !file.endsWith('_headers')) continue
+    if (readFileSync(file, 'utf8').includes(CONTACT_TOKEN)) fail('legal', `${rel(file)} contains ${CONTACT_TOKEN}`)
   }
-
-  let drafts = 0
-  for (const page of html) {
-    if (!page.text.includes(CONTACT_TOKEN)) continue
-    drafts++
-    const path = urlOf(page.file).replace(/\/+$/, '') || '/'
-    if (reachable.has(path)) {
-      fail('legal', `${page.file} carries ${CONTACT_TOKEN} but is linked or in the sitemap; remove the token or the links`)
-    }
-    const noindex = tagsOf(page.text).some(
-      (t) => t.name === 'meta' && t.attrs.get('name') === 'robots' && /noindex/i.test(t.attrs.get('content') ?? ''),
-    )
-    if (!noindex) fail('legal', `${page.file} carries ${CONTACT_TOKEN} but lacks <meta name="robots" content="noindex">`)
-  }
-  for (const url of LEGAL_DRAFTS) {
-    const page = html.find((p) => urlOf(p.file) === url)
-    if (!page) fail('legal', `${url.slice(1, -1)}.astro was not built (expected at ${url})`)
-    else if (!page.text.includes(CONTACT_TOKEN)) {
-      fail('legal', `${page.file} is a legal draft without the ${CONTACT_TOKEN} placeholder; is it meant to be published?`)
-    }
-  }
-  return drafts
+  return pending.length
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -842,6 +823,6 @@ console.log(`  code     ok: ${codeTokens} code tokens coloured by the theme, all
 console.log(`  light    ok: ${lightChecked} stylesheets and scripts: no backdrop-filter, no endless animation, no move or scroll listeners`)
 console.log(`  app      ok: ${appCheck.pages} pages checked; no hosted app or account links (the product is self-hosted)`)
 console.log(`  pricing  ok: #pricing exists, ${pricingLinks} plan links resolve to the quick start and the repository, no sign-up links`)
-console.log(`  legal    ok: ${legalDrafts} legal draft(s) carry ${CONTACT_TOKEN}; all noindex, unlinked and out of the sitemap`)
+console.log(`  legal    ok: ${legalDrafts} legal draft(s) carry ${CONTACT_TOKEN}; none built, and the token ships nowhere`)
 console.log(`  fonts    ok: ${fontFaces} @font-face rules, all Google Sans Flex; no other font file or preload`)
 console.log(`  redirects ok: ${redirectRules} permanent redirects to built pages; nothing links to a retired address`)
