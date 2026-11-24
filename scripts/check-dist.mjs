@@ -27,6 +27,10 @@
 //          scroll, wheel or touch moves. One-time effects (the title and wordmark print, the theme toggle's view
 //          transition on click) are fine.
 // app      Durable Runner is self-hosted — there is no hosted app or account area, so no page links to one
+// pricing  the home page has a #pricing section whose plans link to the docs quick start and the
+//          repository, and nothing links to a sign-up or account page (there is no app yet)
+// legal    the draft legal pages are marked noindex and keep out of links and the sitemap, so the
+//          CONTACT_ADDRESS_TBD placeholder never ships on a reachable page
 // fonts    the site uses exactly one webfont: every @font-face is Google Sans Flex, every font file built is
 //          its one woff2 file, and nothing links to or preloads any other font.
 // redirects dist/_redirects matches public/_redirects; every rule is a permanent redirect from a plain
@@ -693,6 +697,87 @@ function checkApp() {
 }
 
 // ---------------------------------------------------------------------------------------------
+// pricing: the section exists, its two plans link where they say they do, and none invents a sign-up
+
+function checkPricing() {
+  const home = html.find((p) => urlOf(p.file) === '/')
+  if (!home) return void fail('pricing', 'no home page in the build')
+  const section = /<section\b[^>]*\bid="pricing"[^>]*>[\s\S]*?<\/section>/.exec(home.text)?.[0]
+  if (!section) return void fail('pricing', 'index.html has no <section id="pricing">; the nav and footer link to it')
+
+  // The section's own claims: self-hosted goes to the quick start, the cloud plan to the repository.
+  // There is no hosted app, so nothing may link to a sign-up, login or billing address.
+  const hrefs = tagsOf(section)
+    .filter((t) => t.name === 'a')
+    .map((t) => t.attrs.get('href') ?? '')
+  if (!hrefs.some((h) => /\/quick-start\/?$/.test(h))) {
+    fail('pricing', 'no plan links to the docs quick start (…/quick-start/)')
+  }
+  if (!hrefs.includes('https://github.com/akira-shirase-oss/durable-runner')) {
+    fail('pricing', 'the cloud plan does not link to the repository')
+  }
+  const app = hrefs.find((h) => /sign-?up|register|log-?in|sign-?in|checkout|billing|subscribe|app\./i.test(h))
+  if (app) fail('pricing', `a plan links to ${app}; there is no hosted app or sign-up yet`)
+
+  // The nav and footer both carry the section's anchor, and the anchor resolves (checked in links).
+  const anchor = /<a\b[^>]*href="(?:\/#|#)pricing"/
+  const head = /<header[\s\S]*?<\/header>/.exec(home.text)?.[0] ?? ''
+  const foot = /<footer[\s\S]*?<\/footer>/.exec(home.text)?.[0] ?? ''
+  if (!anchor.test(head)) fail('pricing', 'the header nav does not link to #pricing')
+  if (!anchor.test(foot)) fail('pricing', 'the footer does not link to #pricing')
+  return hrefs.length
+}
+
+// ---------------------------------------------------------------------------------------------
+// legal: the draft terms and privacy pages carry a contact placeholder; it must never sit on a page a
+// visitor or a crawler can reach — noindex, out of the sitemap, and the target of no link.
+
+const CONTACT_TOKEN = 'CONTACT_ADDRESS_TBD'
+const LEGAL_DRAFTS = ['/terms/', '/privacy/']
+
+function checkLegal() {
+  // Reachable = in the sitemap or the target of any same-origin <a>/<link> on a built page.
+  const reachable = new Set()
+  const addPath = (pathname) => reachable.add(pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname)
+  const sitemap = join(dist, 'sitemap.xml')
+  if (existsSync(sitemap)) {
+    for (const m of readFileSync(sitemap, 'utf8').matchAll(/<loc>([^<]+)<\/loc>/g)) {
+      addPath(new URL(decode(m[1])).pathname)
+    }
+  }
+  for (const page of html) {
+    for (const tag of tagsOf(page.text)) {
+      if (tag.name !== 'a' && tag.name !== 'link') continue
+      const raw = tag.attrs.get('href')
+      if (!raw || !sameOrigin(raw) || raw.startsWith('#')) continue
+      addPath(new URL(raw, `${site}${urlOf(page.file)}`).pathname)
+    }
+  }
+
+  let drafts = 0
+  for (const page of html) {
+    if (!page.text.includes(CONTACT_TOKEN)) continue
+    drafts++
+    const path = urlOf(page.file).replace(/\/+$/, '') || '/'
+    if (reachable.has(path)) {
+      fail('legal', `${page.file} carries ${CONTACT_TOKEN} but is linked or in the sitemap; remove the token or the links`)
+    }
+    const noindex = tagsOf(page.text).some(
+      (t) => t.name === 'meta' && t.attrs.get('name') === 'robots' && /noindex/i.test(t.attrs.get('content') ?? ''),
+    )
+    if (!noindex) fail('legal', `${page.file} carries ${CONTACT_TOKEN} but lacks <meta name="robots" content="noindex">`)
+  }
+  for (const url of LEGAL_DRAFTS) {
+    const page = html.find((p) => urlOf(p.file) === url)
+    if (!page) fail('legal', `${url.slice(1, -1)}.astro was not built (expected at ${url})`)
+    else if (!page.text.includes(CONTACT_TOKEN)) {
+      fail('legal', `${page.file} is a legal draft without the ${CONTACT_TOKEN} placeholder; is it meant to be published?`)
+    }
+  }
+  return drafts
+}
+
+// ---------------------------------------------------------------------------------------------
 // light: nothing that keeps painting while the visitor does nothing, or runs on every pointer or scroll move
 
 function checkLight() {
@@ -737,6 +822,8 @@ const redirectRules = checkRedirects()
 const codeTokens = checkCode()
 const fontFaces = checkFonts()
 const appCheck = checkApp()
+const pricingLinks = checkPricing()
+const legalDrafts = checkLegal()
 const lightChecked = checkLight()
 
 if (failures.length) {
@@ -754,5 +841,7 @@ console.log(`  jsonld   ok: ${jsonLdBlocks} JSON-LD blocks, all valid JSON with 
 console.log(`  code     ok: ${codeTokens} code tokens coloured by the theme, all at AA on the light and dark code surfaces`)
 console.log(`  light    ok: ${lightChecked} stylesheets and scripts: no backdrop-filter, no endless animation, no move or scroll listeners`)
 console.log(`  app      ok: ${appCheck.pages} pages checked; no hosted app or account links (the product is self-hosted)`)
+console.log(`  pricing  ok: #pricing exists, ${pricingLinks} plan links resolve to the quick start and the repository, no sign-up links`)
+console.log(`  legal    ok: ${legalDrafts} legal draft(s) carry ${CONTACT_TOKEN}; all noindex, unlinked and out of the sitemap`)
 console.log(`  fonts    ok: ${fontFaces} @font-face rules, all Google Sans Flex; no other font file or preload`)
 console.log(`  redirects ok: ${redirectRules} permanent redirects to built pages; nothing links to a retired address`)
