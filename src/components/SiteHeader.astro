@@ -1,7 +1,7 @@
 ---
 // The header: a floating bar (rounded, inset from the top, the content column's width) that stays at the top
 // while you scroll: solid, no blur, so it costs nothing per frame. Logo left, five links centred, a quiet theme
-// toggle and the vermilion Get started right. Below 900 px the links fold into a native <details> menu, so it
+// toggle and the vermilion Get started right. Below 1000 px the links fold into a native <details> menu, so it
 // works without JavaScript.
 // The theme toggle is the family's: one button between light and dark that follows the system until pressed;
 // pressing onto the system's own scheme goes back to following it. A stored choice is applied before first
@@ -12,6 +12,7 @@ import { Sun, Moon, SquareTerminal } from '@lucide/svelte'
 import { DOCS_URL, REPO } from '../data/app'
 
 const links = [
+  { label: 'Docs', href: `${DOCS_URL}/` },
   { label: 'Concepts', href: `${DOCS_URL}/concepts/` },
   { label: 'Inspector', href: `${DOCS_URL}/inspector/` },
   { label: 'API', href: `${DOCS_URL}/api/` },
@@ -32,8 +33,8 @@ const start = `${DOCS_URL}/quick-start/`
         <span class="whitespace-nowrap text-[19px] font-[560] leading-none tracking-[-0.018em] max-[639px]:text-[17.5px]">Durable Runner</span>
       </a>
 
-      <nav aria-label="Primary" class="absolute left-1/2 hidden -translate-x-1/2 min-[900px]:block">
-        <ul class="flex items-center gap-[34px]">
+      <nav aria-label="Primary" class="absolute left-1/2 hidden -translate-x-1/2 min-[1000px]:block">
+        <ul class="flex items-center gap-[30px] min-[1100px]:gap-[34px]">
           {
             links.map((l) => (
               <li>
@@ -69,7 +70,7 @@ const start = `${DOCS_URL}/quick-start/`
           <SquareTerminal strokeWidth={1.8} aria-hidden="true" />
           Get started
         </Button>
-        <details class="menu relative min-[900px]:hidden">
+        <details class="menu relative min-[1000px]:hidden">
           <summary
             class="grid size-10 cursor-pointer list-none place-items-center rounded-[12px] text-ink hover:bg-[var(--c-hover)] max-[639px]:size-9"
             aria-label="Menu"
