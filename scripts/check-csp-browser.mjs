@@ -514,30 +514,8 @@ await visit('/', phone, async (page, report) => {
   if (!(m.tops.length === 2 && m.tops[1] > m.tops[0])) report(`the two plans do not stack at 390px (tops ${m.tops})`)
 })
 
-// The legal drafts are real pages under the CSP: marked Draft, noindex, and named in neither the sitemap
-// nor any link — the contact placeholder keeps them unpublished until the operator's address is decided.
-for (const path of ['/terms/', '/privacy/']) {
-  await visit(path, desktop, async (page, report) => {
-    interactions++
-    const s = await page.evaluate(() => ({
-      robots: document.querySelector('meta[name="robots"]')?.getAttribute('content') ?? null,
-      canonical: document.querySelector('link[rel="canonical"]')?.getAttribute('href') ?? null,
-      draft: document.querySelector('main .draft')?.textContent.trim() ?? null,
-      h1: document.querySelectorAll('h1').length,
-      token: (document.body.innerHTML.match(/CONTACT_ADDRESS_TBD/g) ?? []).length,
-    }))
-    if (s.robots !== 'noindex') report(`robots is ${s.robots}, not noindex`)
-    if (s.canonical !== null) report(`a draft names a canonical (${s.canonical})`)
-    if (s.draft !== 'Draft') report(`no visible Draft marker (got ${s.draft})`)
-    if (s.h1 !== 1) report(`${s.h1} <h1> elements`)
-    if (s.token < 1) report('no CONTACT_ADDRESS_TBD placeholder on the page')
-    const listed = await page.evaluate(async () => {
-      const xml = await (await fetch('/sitemap.xml')).text()
-      return xml.includes(location.pathname)
-    })
-    if (listed) report('a legal draft is in the sitemap')
-  })
-}
+// The legal drafts live outside src/pages (drafts/legal/), so nothing serves them — check-dist proves
+// the token never ships; there is no draft page to visit here.
 
 // Crash-case micro-interactions: hovering a case plays its act-out exactly once (a finite animation) and
 // shows the survived check; reduced motion keeps the check but plays nothing.
