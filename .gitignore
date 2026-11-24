@@ -25,3 +25,4 @@ shots
 
 # Astro
 .astro
+.cache/

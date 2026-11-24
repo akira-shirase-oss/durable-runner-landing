@@ -1,0 +1,124 @@
+---
+// Use case 4: a consistent backup of the journal while it runs, encrypted with age, uploaded to R2, and
+// restored on a new host (the deploy package's backup + restore drill).
+import Node from './Node.astro'
+import Edge from './Edge.astro'
+import Fork from './Fork.astro'
+import { Archive, Cloud, Server } from '@lucide/svelte'
+
+// The journal as frames: written records (ink), the latest (brand), free space (blank).
+const cells = Array.from({ length: 24 }, (_, i) => (i === 17 ? 'new' : [1, 4, 6, 9, 10, 13, 15, 20, 22].includes(i) ? 'rec' : 'free'))
+---
+
+<div class="flow" role="img" aria-label="A consistent backup of the journal, named nightly-1, is encrypted with age and uploaded to an R2 bucket, then restored on a new host.">
+  <div class="journal" style="--n:0" aria-hidden="true">
+    <div class="cells">{cells.map((c, i) => <span class={c} style={`--c:${i}`}></span>)}</div>
+    <p>journal</p>
+  </div>
+  <Edge kind="chev" label="backup" n={1} min={70} at={0} />
+  <Node label="nightly-1" badge="age" n={2} badgeAt={520}><Archive strokeWidth={1.7} /></Node>
+  <Fork up="upload" down="restore" n={3} min={96} at={600} />
+  <div class="targets">
+    <Node label="R2 bucket" n={4}><Cloud strokeWidth={1.7} /></Node>
+    <Node label="new host" badge="ok" n={5} badgeAt={1260}><Server strokeWidth={1.7} /></Node>
+  </div>
+</div>
+
+<style>
+  .flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 4px 30px;
+  }
+  .journal {
+    position: relative;
+    flex: none;
+    padding: 10px;
+    border-radius: 16px;
+    background: var(--c-tile);
+    box-shadow:
+      0 0 0 1px var(--c-line),
+      0 8px 18px -10px var(--c-tile-shadow);
+  }
+  .journal p {
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 9px);
+    margin: 0;
+    transform: translateX(-50%);
+    font-size: 13px;
+    line-height: 16px;
+    color: var(--c-ink);
+  }
+  .cells {
+    display: grid;
+    grid-template-columns: repeat(6, 20px);
+    gap: 4px;
+  }
+  .cells span {
+    height: 20px;
+    border-radius: 5px;
+    background: var(--c-panel);
+    box-shadow: inset 0 0 0 1px var(--c-line);
+  }
+  .cells .rec {
+    background: var(--c-line-strong);
+    box-shadow: none;
+  }
+  .cells .new {
+    background: var(--c-brand-2);
+    box-shadow: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global([data-play='armed']) .journal,
+    :global([data-play='armed']) .cells span {
+      opacity: 0;
+    }
+    :global([data-play='in']) .journal {
+      animation: journal-in 320ms cubic-bezier(0.2, 0.8, 0.2, 1) 80ms both;
+    }
+    :global([data-play='in']) .cells span {
+      animation: cell-in 220ms ease-out both;
+      animation-delay: calc(var(--c) * 18ms + 220ms);
+    }
+    :global([data-replay]) .cells .new {
+      animation: cell-blink 300ms ease-in-out 1;
+    }
+  }
+  @keyframes journal-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes cell-in {
+    from {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes cell-blink {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.25);
+    }
+  }
+  .targets {
+    display: flex;
+    flex-direction: column;
+    gap: 44px;
+  }
+</style>

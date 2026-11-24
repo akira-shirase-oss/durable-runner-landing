@@ -1,0 +1,76 @@
+---
+// The inspector's submit tab, as the phone shows it: operation key (the idempotency key), the steps of the
+// spec (name → handler), not-before, Submit, and the durable ack that comes back.
+import './screen.css'
+import { ArrowUpRight, CircleCheck } from '@lucide/svelte'
+
+const steps = [
+  ['build', 'ci-runner'],
+  ['deploy', 'deployer'],
+  ['notify', 'chat-hook'],
+]
+---
+
+<div class="pane">
+  <p class="h">Submit a job <small>spec v1</small></p>
+  <div class="card">
+    <p class="lbl">Operation key</p>
+    <p class="field mono">deploy-2026-11-24</p>
+    <div class="gap"></div>
+    <p class="lbl">Steps</p>
+    <div class="steps">
+      {
+        steps.map(([name, handler], i) => (
+          <p class="step">
+            <span class="n">{i + 1}</span>
+            <span class="mono">{name}</span>
+            <span class="arrow">→</span>
+            <span class="mono handler">{handler}</span>
+          </p>
+        ))
+      }
+    </div>
+    <div class="gap"></div>
+    <p class="lbl">Not before</p>
+    <p class="field">now</p>
+  </div>
+  <div class="gap"></div>
+  <p class="btn"><ArrowUpRight size={16} strokeWidth={1.8} />Submit</p>
+  <p class="toast"><CircleCheck size={15} strokeWidth={2} />Accepted: run 7812, journaled before the ack</p>
+</div>
+
+<style>
+  .steps {
+    overflow: hidden;
+    border-radius: 10px;
+    box-shadow: inset 0 0 0 1px var(--c-screen-line-strong);
+  }
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 11px;
+  }
+  .step + .step {
+    border-top: 1px solid var(--c-screen-line);
+  }
+  .n {
+    display: grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 6px;
+    background: var(--c-ph-run-bg);
+    color: var(--c-state-run-ph);
+    font-size: 10.5px;
+    font-weight: 600;
+  }
+  .arrow {
+    color: var(--c-screen-body);
+    font-size: 12px;
+  }
+  .handler {
+    color: var(--c-screen-body);
+  }
+</style>

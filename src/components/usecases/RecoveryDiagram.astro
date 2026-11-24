@@ -1,0 +1,33 @@
+---
+// Use case 2: a kill -9, then a restart replays the journal; running work resumes, a call whose reply was
+// lost is reconciled (probed) before anything is repeated.
+import Node from './Node.astro'
+import Edge from './Edge.astro'
+import Fork from './Fork.astro'
+import { FileStack, Play, ScanSearch } from '@lucide/svelte'
+---
+
+<div class="flow" role="img" aria-label="After a kill -9, the runner replays its journal: running work resumes and a call whose reply was lost is reconciled before anything repeats.">
+  <Node label="journal" n={0}><FileStack strokeWidth={1.7} /></Node>
+  <Edge kind="flow" label="replay" n={1} min={62} at={0} />
+  <Node label="runner" brand badge="kill -9" n={2} />
+  <Fork up="resume" down="probe" n={3} min={84} at={560} />
+  <div class="targets">
+    <Node label="resumed" n={4}><Play strokeWidth={1.7} /></Node>
+    <Node label="reconciled" n={5}><ScanSearch strokeWidth={1.7} /></Node>
+  </div>
+</div>
+
+<style>
+  .flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 4px 30px;
+  }
+  .targets {
+    display: flex;
+    flex-direction: column;
+    gap: 44px;
+  }
+</style>

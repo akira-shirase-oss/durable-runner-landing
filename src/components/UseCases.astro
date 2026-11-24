@@ -1,0 +1,234 @@
+---
+// Use cases: a centred heading, then four cards in two rows that alternate wide and narrow, each with a short
+// claim and a diagram drawn from the product's own parts (usecases/*). Layout after a reference; the look is
+// Durable Runner's own (tokens, Google Sans Flex, 30 px cards, vermilion). Every claim is the product's:
+// steps checkpointed in order (durable-domain), restart replay + reconcile (FAILURE_CASES.md 1 and 2), the
+// op_key dedup (duplicate_key_returns_original_run) and the R2 + age backup with its restore drill (deploy/).
+// Motion is the shared play-in-view: a one-shot entrance, then a continuous loop (every 3.2 s, only while on
+// screen and the tab is visible, never the hovered card) of each card's packet beat.
+import * as Card from '$lib/components/ui/card'
+import StepsDiagram from './usecases/StepsDiagram.astro'
+import RecoveryDiagram from './usecases/RecoveryDiagram.astro'
+import DedupeDiagram from './usecases/DedupeDiagram.astro'
+import BackupDiagram from './usecases/BackupDiagram.astro'
+
+const cases = [
+  {
+    title: 'Run multi-step jobs',
+    body: 'Submit a versioned spec once. Each step is checkpointed before the next one starts.',
+    Diagram: StepsDiagram,
+    wide: true,
+  },
+  {
+    title: 'Pick up after a crash',
+    body: 'The journal is fsynced before every ack, so a restart replays it and carries on.',
+    Diagram: RecoveryDiagram,
+  },
+  {
+    title: 'Submit twice, run once',
+    body: 'Send the same operation key again and you get the original run back, not a duplicate.',
+    Diagram: DedupeDiagram,
+  },
+  {
+    title: 'Back up and move hosts',
+    body: 'Take a consistent backup while it runs, encrypt it for object storage, and restore it on a new machine.',
+    Diagram: BackupDiagram,
+    wide: true,
+  },
+]
+---
+
+<section class="uses" id="use-cases" aria-labelledby="uses-title" data-play-section data-play-ms="2800" data-replay-ms="1900" data-loop-ms="3200">
+  <header class="head">
+    <p class="eyebrow">Use cases</p>
+    <h2 id="uses-title">Make Background Jobs Boring</h2>
+    <p class="lede">
+      Durable Runner gives your jobs a journal, honest retries and a backup story, so deploys, exports and webhooks
+      finish even when a process dies.
+    </p>
+  </header>
+
+  <div class="grid">
+    {
+      cases.map(({ title, body, Diagram, wide }) => (
+        <Card.Root class:list={['case gap-0 rounded-[30px] p-0 ring-0', { wide }]} data-tile>
+          <div class="text">
+            <h3>{title}</h3>
+            <p>{body}</p>
+          </div>
+          <div class="stage">
+            <div class="fit">
+              <Diagram />
+            </div>
+          </div>
+        </Card.Root>
+      ))
+    }
+  </div>
+</section>
+
+<script>
+  import '../scripts/play-in-view'
+</script>
+
+<style>
+  /* the packet timeline starts once the entrance has drawn every node and line; a replay starts it at once */
+  .uses[data-play='in'] {
+    --pkt-base: 760ms;
+  }
+  .uses :global([data-replay]) {
+    --pkt-base: 0ms;
+  }
+  .uses {
+    width: 100%;
+    max-width: 1200px;
+    margin: 128px auto 0;
+    padding: 0 16px;
+  }
+  .head {
+    max-width: 640px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .eyebrow {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--c-brand-deep);
+  }
+  h2 {
+    margin: 10px 0 0;
+    font-size: 46px;
+    font-weight: 480;
+    line-height: 54px;
+    letter-spacing: -0.03em;
+    color: var(--c-ink);
+  }
+  .lede {
+    margin: 16px auto 0;
+    max-width: 600px;
+    font-size: 17px;
+    line-height: 26px;
+    letter-spacing: 0.002em;
+    color: var(--c-body);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 56px;
+  }
+  /* rows alternate wide | narrow, then narrow | wide: three columns (468 · 182 · 468 at the 1168 px column) and
+     the wide cards span two of them (668) */
+  @media (min-width: 1000px) {
+    .grid {
+      grid-template-columns: minmax(0, 468fr) minmax(0, 182fr) minmax(0, 468fr);
+    }
+    .grid > :global(:nth-child(1)) {
+      grid-column: 1 / 3;
+    }
+    .grid > :global(:nth-child(2)) {
+      grid-column: 3 / 4;
+    }
+    .grid > :global(:nth-child(3)) {
+      grid-column: 1 / 2;
+    }
+    .grid > :global(:nth-child(4)) {
+      grid-column: 2 / 4;
+    }
+  }
+
+  .grid :global(.case) {
+    display: flex;
+    flex-direction: column;
+    background: var(--c-card);
+    box-shadow:
+      0 0 0 1px var(--c-line),
+      0 18px 40px -28px var(--c-tile-shadow);
+    color: var(--c-ink);
+  }
+  .text {
+    padding: 32px 34px 0;
+  }
+  h3 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 450;
+    line-height: 30px;
+    letter-spacing: -0.018em;
+    color: var(--c-ink);
+  }
+  .text p {
+    max-width: 520px;
+    margin: 9px 0 0;
+    font-size: 16px;
+    line-height: 23.5px;
+    letter-spacing: 0.002em;
+    color: var(--c-body);
+  }
+  .stage {
+    display: grid;
+    flex: 1;
+    place-items: center;
+    margin: 26px 18px 18px;
+    padding: 26px 16px;
+    container-type: inline-size;
+    border-radius: 22px;
+    background-color: var(--c-panel);
+    background-image: radial-gradient(circle, var(--c-dot) 1px, transparent 1.3px);
+    background-size: 14px 14px;
+  }
+  .fit {
+    width: 100%;
+  }
+  /* diagrams keep their proportions and scale down in narrow cards */
+  @container (max-width: 430px) {
+    .fit {
+      zoom: 0.86;
+    }
+  }
+  @container (max-width: 370px) {
+    .fit {
+      zoom: 0.74;
+    }
+  }
+  @container (max-width: 320px) {
+    .fit {
+      zoom: 0.64;
+    }
+  }
+
+  @media (max-width: 999px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 639px) {
+    .uses {
+      margin-top: 96px;
+    }
+    h2 {
+      font-size: 34px;
+      line-height: 40px;
+    }
+    .lede {
+      font-size: 16px;
+      line-height: 24px;
+    }
+    .grid {
+      margin-top: 40px;
+    }
+    .text {
+      padding: 26px 24px 0;
+    }
+    h3 {
+      font-size: 22px;
+    }
+    .stage {
+      margin: 20px 8px 8px;
+      padding: 22px 4px;
+      border-radius: 20px;
+    }
+  }
+</style>

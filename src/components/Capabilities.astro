@@ -1,0 +1,586 @@
+---
+// The section after the proof strip: a statement on the left that lights up word by word (once, when it
+// comes into view), and three cards on the right: lost replies reconciled (the tall one), honest refusals at
+// capacity, and the sustained-load figure framed in a brand-coloured "lens" of sky.
+// Every claim is the product's own (FAILURE_CASES.md, durable-server's 503 at_capacity, the 1M/1M run).
+//
+// Motion (all one-shot, transform and opacity only, nothing repeats on its own): when the section comes into
+// view the badge's journal frames slide into their stack, the call log tells its story row by row (the lost
+// reply shudders, the checkpoint pops), the 503 chip pops in, and the figure rises while a glint sweeps the
+// lens. Hovering or tapping a card replays its beat without hiding anything. Reduced motion, or no script,
+// shows the finished state.
+// Pictures are crops of the hero's landscape, so the section costs no extra download, and they switch to the
+// moonlit version in dark mode with everything else.
+import * as Card from '$lib/components/ui/card'
+import { Badge } from '$lib/components/ui/badge'
+import { Button } from '$lib/components/ui/button'
+import { ArrowUpRight, Unplug, ScanSearch, Check, Ban, SquareTerminal } from '@lucide/svelte'
+import { DOCS_URL } from '../data/app'
+
+const statement =
+  'Your background jobs in one runner: submit versioned work, watch every retry, and restore from a backup with zero extra infrastructure.'
+const words = statement.split(' ')
+
+const log = [
+  { Icon: ArrowUpRight, tone: 'run', what: 'POST publish', note: 'attempt 1' },
+  { Icon: Unplug, tone: 'retry', what: 'reply lost', note: 'after 2 s' },
+  { Icon: ScanSearch, tone: 'probe', what: 'probe: did it land?', note: 'yes' },
+  { Icon: Check, tone: 'done', what: 'checkpointed', note: 'not repeated' },
+]
+---
+
+<section class="caps" aria-labelledby="caps-title" data-caps data-play-section>
+  <div class="intro">
+    <Badge variant="outline" class="h-[34px] gap-[8px] rounded-[10px] border-line bg-card pl-[10px] pr-[12px] text-[15px] font-normal tracking-[0.003em] text-ink-soft">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" class="stack size-[19px]" aria-hidden="true">
+        <rect class="f3" x="9.6" y="4.2" width="10.2" height="10.2" rx="2.6"></rect>
+        <rect class="f2" x="6.9" y="6.9" width="10.2" height="10.2" rx="2.6"></rect>
+        <rect class="f1" x="4.2" y="9.6" width="10.2" height="10.2" rx="2.6"></rect>
+      </svg>
+      One binary, one journal
+    </Badge>
+    <h2 id="caps-title" class="statement" data-reveal>
+      {words.map((w, i) => <><span class="w" style={`--i:${i}`}>{w}</span>{i < words.length - 1 ? ' ' : ''}</>)}
+    </h2>
+    <Button href={`${DOCS_URL}/quick-start/`} class="start w-fit">
+      <SquareTerminal strokeWidth={1.8} aria-hidden="true" />
+      Start for Free
+    </Button>
+  </div>
+
+  <Card.Root class="tile big gap-0 rounded-[30px] p-0 ring-0" data-tile>
+    <div class="bg" aria-hidden="true"></div>
+    <div class="ui" role="img" aria-label="A handler call whose reply was lost: the runner probes whether the work landed, it did, so the step is checkpointed and not repeated.">
+      {
+        log.map(({ Icon, tone, what, note }, i) => (
+          <p class="row" style={`--r:${i}`} aria-hidden="true">
+            <span class={`dot ${tone}`}>
+              <Icon size={11} strokeWidth={2.6} />
+            </span>
+            <span>{what}</span>
+            <em>{note}</em>
+          </p>
+        ))
+      }
+    </div>
+    <div class="copy">
+      <h3>Lost replies, reconciled</h3>
+      <p>If a reply never arrives, the runner asks whether the work landed before it retries.</p>
+    </div>
+  </Card.Root>
+
+  <Card.Root class="tile small top gap-0 rounded-[30px] p-0 ring-0" data-tile>
+    <div class="bg" aria-hidden="true"></div>
+    <span class="pill" aria-hidden="true"><Ban size={12} strokeWidth={2.2} />503 at_capacity</span>
+    <div class="copy">
+      <h3>Honest when it's full</h3>
+      <p>At capacity it answers 503 at_capacity instead of quietly dropping work.</p>
+    </div>
+  </Card.Root>
+
+  <Card.Root class="tile small stat gap-0 rounded-[30px] p-0 ring-0" data-tile>
+    <div class="lens">
+      <div class="sky" aria-hidden="true"></div>
+      <i class="glint" aria-hidden="true"></i>
+      <i class="shine" aria-hidden="true"></i>
+      <p class="figure">1M / 1M</p>
+      <p class="what">submits accepted<br />in a sustained run</p>
+    </div>
+    <p class="note">dev machine</p>
+  </Card.Root>
+</section>
+
+<script>
+  import '../scripts/play-in-view'
+
+  // The statement lights up word by word, once, when most of it is on screen. It is real text throughout;
+  // only its colour changes. Reduced motion (or no script) keeps it fully lit from the start.
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    for (const el of document.querySelectorAll<HTMLElement>('[data-reveal]')) {
+      el.dataset.reveal = 'armed'
+      const seen = new IntersectionObserver(
+        (entries) => {
+          if (!entries.some((e) => e.isIntersecting)) return
+          el.dataset.reveal = 'lit'
+          seen.disconnect()
+        },
+        { threshold: 0.6 },
+      )
+      seen.observe(el)
+    }
+
+  }
+</script>
+
+<style>
+  .caps {
+    display: grid;
+    grid-template-columns: minmax(0, 389fr) minmax(0, 404fr) minmax(0, 341fr);
+    grid-template-rows: 217px 217px;
+    gap: 18px 17px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 128px auto 0;
+    padding: 0 16px;
+  }
+
+  /* the statement column */
+  .intro {
+    grid-row: 1 / 3;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .statement {
+    max-width: 352px;
+    margin: 19px 0 0;
+    font-size: 21.5px;
+    font-weight: 500;
+    line-height: 35px;
+    letter-spacing: -0.012em;
+    color: var(--c-ink);
+  }
+  .statement[data-reveal='armed'] .w {
+    color: var(--c-mark-faint);
+  }
+  .statement[data-reveal='lit'] .w {
+    transition: color 320ms ease-out;
+    transition-delay: calc(var(--i) * 14ms);
+  }
+  .intro :global(.start) {
+    margin-top: auto;
+  }
+
+  /* the cards */
+  .caps :global(.tile) {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    color: var(--c-on-photo);
+  }
+  .caps :global(.big) {
+    grid-row: 1 / 3;
+  }
+  .bg {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    background-color: var(--c-sky);
+    background-image: var(--img-landscape);
+    background-repeat: no-repeat;
+    transition: transform 150ms ease-out;
+  }
+  .caps :global(.big) .bg {
+    background-size: auto 520px;
+    background-position: -786px -10px;
+  }
+  .caps :global(.top) .bg {
+    background-size: auto 640px;
+    background-position: -1010px -20px;
+  }
+  .caps :global(.tile)::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(to top, var(--c-scrim) 0%, var(--c-scrim-soft) 42%, transparent 66%);
+    pointer-events: none;
+  }
+  .copy {
+    position: absolute;
+    left: 31px;
+    right: 28px;
+    bottom: 29px;
+  }
+  .caps :global(.small) .copy {
+    left: 23px;
+    right: 22px;
+    bottom: 22px;
+  }
+  h3 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 400;
+    line-height: 30px;
+    letter-spacing: -0.015em;
+    color: var(--c-on-photo);
+  }
+  .copy p {
+    margin: 8px 0 0;
+    font-size: 16px;
+    line-height: 23.5px;
+    letter-spacing: 0.002em;
+    color: var(--c-on-photo-soft);
+  }
+
+  /* the call log on the tall card */
+  .ui {
+    position: absolute;
+    left: 50%;
+    top: 36px;
+    width: 300px;
+    margin-left: -150px;
+    padding: 6px 12px;
+    border-radius: 16px;
+    background: var(--c-screen-card);
+    color: var(--c-screen-ink);
+    box-shadow: 0 14px 30px -14px var(--c-phone-shadow);
+    transition: transform 150ms ease-out;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 20px 1fr auto;
+    align-items: center;
+    gap: 9px;
+    height: 34px;
+    margin: 0;
+    font-size: 13px;
+  }
+  .row + .row {
+    border-top: 1px solid var(--c-screen-line);
+  }
+  .row em {
+    font-style: normal;
+    font-size: 11.5px;
+    color: var(--c-screen-body);
+  }
+  .dot {
+    display: grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 7px;
+  }
+  .dot.run {
+    background: var(--c-ph-run-bg);
+    color: var(--c-state-run-ph);
+  }
+  .dot.retry {
+    background: var(--c-ph-retry-bg);
+    color: var(--c-ph-retry);
+  }
+  .dot.probe {
+    background: var(--c-state-probe-bg);
+    color: var(--c-state-probe);
+  }
+  .dot.done {
+    background: var(--c-ph-done-bg);
+    color: var(--c-ph-done);
+  }
+
+  /* the capacity pill on the cloud card */
+  .pill {
+    position: absolute;
+    left: 23px;
+    top: 22px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 13px;
+    background: var(--c-screen-card);
+    box-shadow: 0 8px 18px -10px var(--c-phone-shadow);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: var(--c-screen-ink);
+    transition: transform 150ms ease-out;
+  }
+  .pill :global(svg) {
+    color: var(--c-ph-retry);
+  }
+
+  /* the figure, in a lens of sky on the brand colour */
+  .caps :global(.stat) {
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(120% 90% at 20% 0%, var(--c-brand-glow) 0%, transparent 45%),
+      linear-gradient(150deg, var(--c-brand-1) 0%, var(--c-brand-2) 100%);
+  }
+  .caps :global(.stat)::after {
+    content: none;
+  }
+  .lens {
+    position: relative;
+    display: grid;
+    place-content: center;
+    width: 238px;
+    height: 158px;
+    margin-top: -14px;
+    overflow: hidden;
+    border-radius: 46px;
+    text-align: center;
+    box-shadow:
+      0 0 0 1px var(--c-glass-edge),
+      0 18px 30px -16px var(--c-brand-shade),
+      inset 0 2px 14px var(--c-scrim-soft);
+    transition: transform 150ms ease-out;
+  }
+  .sky {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-color: var(--c-sky);
+    background-image: linear-gradient(var(--c-scrim-soft), var(--c-scrim-soft)), var(--img-landscape);
+    background-size: auto, auto 600px;
+    background-position: 0 0, -1300px 0;
+    background-repeat: no-repeat;
+  }
+  .lens {
+    isolation: isolate;
+  }
+  .glint {
+    position: absolute;
+    left: 20px;
+    top: 15px;
+    width: 16px;
+    height: 9px;
+    border-radius: 6px;
+    background: var(--c-on-photo-soft);
+    transform: rotate(-24deg);
+  }
+  .figure {
+    margin: 0;
+    font-size: 44px;
+    font-weight: 600;
+    line-height: 48px;
+    letter-spacing: -0.03em;
+    color: var(--c-on-photo);
+  }
+  .what {
+    margin: 4px 0 0;
+    font-size: 18px;
+    line-height: 23px;
+    letter-spacing: -0.005em;
+    color: var(--c-on-photo);
+  }
+  .note {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 11px;
+    margin: 0;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    text-align: center;
+    color: var(--c-on-photo-soft);
+  }
+
+  /* micro-interactions: on hover the picture eases in a touch and the floating pieces lift */
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .caps :global(.tile:hover) .bg {
+      transform: scale(1.035);
+    }
+    .caps :global(.tile:hover) .ui,
+    .caps :global(.tile:hover) .pill {
+      transform: translateY(-3px);
+    }
+    .caps :global(.stat:hover) .lens {
+      transform: scale(1.03);
+    }
+  }
+
+  /* the shine that sweeps the lens: parked off to the left until it plays */
+  .shine {
+    position: absolute;
+    inset: -20% auto -20% 0;
+    width: 46%;
+    background: linear-gradient(100deg, transparent 0%, var(--c-glass-edge) 45%, var(--c-glass) 60%, transparent 100%);
+    transform: translateX(-120%) skewX(-14deg);
+    pointer-events: none;
+  }
+  .stack rect {
+    transform-box: fill-box;
+  }
+
+  /* the entrance: pieces wait while armed, play once on 'in' */
+  @media (prefers-reduced-motion: no-preference) {
+    .caps[data-play='armed'] .ui,
+    .caps[data-play='armed'] .row,
+    .caps[data-play='armed'] .pill,
+    .caps[data-play='armed'] .figure,
+    .caps[data-play='armed'] .what {
+      opacity: 0;
+    }
+    .caps[data-play='armed'] .stack .f3 {
+      transform: translate(-5.4px, 5.4px);
+    }
+    .caps[data-play='armed'] .stack .f2 {
+      transform: translate(-2.7px, 2.7px);
+    }
+    .caps[data-play='in'] .stack .f3 {
+      animation: settle-3 420ms cubic-bezier(0.2, 0.8, 0.2, 1) 80ms both;
+    }
+    .caps[data-play='in'] .stack .f2 {
+      animation: settle-2 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+    .caps[data-play='in'] .ui {
+      animation: rise 280ms ease-out both;
+    }
+    .caps[data-play='in'] .row {
+      animation: rise 260ms ease-out both;
+      animation-delay: calc(var(--r) * 110ms + 120ms);
+    }
+    .caps[data-play='in'] .row:nth-child(2) .dot {
+      animation: shudder 300ms linear 380ms 1;
+    }
+    .caps[data-play='in'] .row:nth-child(4) .dot {
+      animation: pop 300ms cubic-bezier(0.3, 1.6, 0.5, 1) 560ms 1 both;
+    }
+    .caps[data-play='in'] .pill {
+      animation: pop-in 300ms cubic-bezier(0.3, 1.5, 0.5, 1) 260ms both;
+    }
+    .caps[data-play='in'] .figure {
+      animation: rise 380ms ease-out 200ms both;
+    }
+    .caps[data-play='in'] .what {
+      animation: rise 380ms ease-out 300ms both;
+    }
+    .caps[data-play='in'] .shine {
+      animation: sweep 700ms ease-in-out 420ms 1;
+    }
+
+    /* the replays: nothing disappears, the beat just plays again */
+    :global(.tile[data-replay]) .row .dot {
+      animation: pop 260ms cubic-bezier(0.3, 1.6, 0.5, 1) both;
+      animation-delay: calc(var(--r) * 90ms);
+    }
+    :global(.tile[data-replay]) .row:nth-child(2) .dot {
+      animation: shudder 300ms linear 90ms 1;
+    }
+    :global(.tile[data-replay]) .pill {
+      animation: refuse 320ms linear 1;
+    }
+    :global(.tile[data-replay]) .shine {
+      animation: sweep 700ms ease-in-out 1;
+    }
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes pop {
+    0% {
+      transform: scale(1);
+    }
+    45% {
+      transform: scale(1.28);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  @keyframes shudder {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    20%,
+    60% {
+      transform: translateX(-2px) rotate(-6deg);
+    }
+    40%,
+    80% {
+      transform: translateX(2px) rotate(6deg);
+    }
+  }
+  @keyframes refuse {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    25%,
+    75% {
+      transform: translateX(-3px);
+    }
+    50% {
+      transform: translateX(3px);
+    }
+  }
+  @keyframes sweep {
+    from {
+      transform: translateX(-120%) skewX(-14deg);
+    }
+    to {
+      transform: translateX(320%) skewX(-14deg);
+    }
+  }
+  @keyframes settle-3 {
+    from {
+      transform: translate(-5.4px, 5.4px);
+    }
+    to {
+      transform: none;
+    }
+  }
+  @keyframes settle-2 {
+    from {
+      transform: translate(-2.7px, 2.7px);
+    }
+    to {
+      transform: none;
+    }
+  }
+
+  @media (max-width: 999px) {
+    .caps {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto 217px 217px;
+      margin-top: 96px;
+    }
+    .intro {
+      grid-column: 1 / -1;
+      grid-row: auto;
+      margin-bottom: 22px;
+    }
+    .statement {
+      max-width: 560px;
+    }
+    .intro :global(.start) {
+      margin-top: 24px;
+    }
+    .caps :global(.big) {
+      grid-row: 2 / 4;
+    }
+  }
+  @media (max-width: 639px) {
+    .caps {
+      grid-template-columns: 1fr;
+      grid-template-rows: none;
+      gap: 14px;
+      margin-top: 80px;
+    }
+    .intro {
+      margin-bottom: 18px;
+    }
+    .statement {
+      font-size: 20px;
+      line-height: 31px;
+    }
+    .caps :global(.big) {
+      grid-row: auto;
+      height: 452px;
+    }
+    .caps :global(.small) {
+      height: 217px;
+    }
+  }
+</style>

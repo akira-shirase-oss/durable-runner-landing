@@ -1,60 +1,204 @@
 ---
-import ArrowButton from './ui/ArrowButton.astro'
+// The hero: the badge, the three-verb headline with the app icon set in it, the one-line promise, and the
+// stage: a landscape panel holding the two cards, with the phone rising out of its top edge.
+// At 1000 px and up the cards sit on the landscape; below, the panel holds the phone and the cards follow it.
+import AppIcon from './AppIcon.astro'
+import PhoneMock from './PhoneMock.astro'
+import IntroCard from './IntroCard.astro'
+import StoryCard from './StoryCard.astro'
+import { Badge } from '$lib/components/ui/badge'
 import { hero } from '../data/hero'
-import { DOCS_URL, REPO } from '../data/app'
-import styles from './Hero.module.css'
-
-// Eight Durable Runner ideas as quiet line icons around the edges (lucide, stroke 1.5), placed outside the
-// clear zone around the words. x/y are the icon's centre in the card, s its size, r its resting turn;
-// `phone` marks the four that stay, in the corners, on a phone.
-const ICONS = [
-  { name: 'hard-drive', x: 7, y: 17, s: 68, r: -8, phone: { x: 9, y: 6 }, paths: '<line x1="22" x2="2" y1="12" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" x2="6.01" y1="16" y2="16"/><line x1="10" x2="10.01" y1="16" y2="16"/>' },
-  { name: 'rotate-ccw', x: 29, y: 9, s: 34, r: 12, paths: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>' },
-  { name: 'shield-check', x: 89, y: 15, s: 56, r: 8, phone: { x: 88, y: 6 }, paths: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>' },
-  { name: 'list-checks', x: 5, y: 56, s: 36, r: 6, paths: '<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>' },
-  { name: 'timer', x: 95, y: 52, s: 40, r: -10, paths: '<line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/>' },
-  { name: 'file-check', x: 14, y: 84, s: 46, r: 10, phone: { x: 10, y: 94 }, paths: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m9 15 2 2 4-4"/>' },
-  { name: 'lock', x: 70, y: 91, s: 38, r: 4, paths: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>' },
-  { name: 'activity', x: 86, y: 82, s: 52, r: -6, phone: { x: 88, y: 94 }, paths: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>' },
-]
-// Prints the title once at load, a pixel row at a time and line after line: it counts the title's lines
-// (before the first paint, so nothing flashes), then arms the shared `print` animation (global.css). The text
-// stays real text throughout; without this script, or with reduced motion, it is simply there.
-const PRINT_TITLE =
-  "var h=document.querySelector('[data-print-title]');if(h&&!matchMedia('(prefers-reduced-motion: reduce)').matches){var s=getComputedStyle(h),n=Math.max(1,Math.round(h.offsetHeight/parseFloat(s.lineHeight)));h.style.setProperty('--print-lines',n);h.style.setProperty('--print-steps',n*parseInt(s.getPropertyValue('--print-rows')||'29'));h.dataset.print='go'}"
-const place = (i: (typeof ICONS)[number]) =>
-  `--x: ${i.x}%; --y: ${i.y}%; --s: ${i.s}px; --r: ${i.r}deg;` +
-  (i.phone ? ` --px-x: ${i.phone.x}%; --px-y: ${i.phone.y}%;` : '')
 ---
 
-<section class={styles.hero}>
-  <div class={`brand-block ${styles.card}`}>
-    <div class={styles.field} aria-hidden="true" data-hero-field>
-      {
-        ICONS.map((i) => (
-          <span class={`${styles.mark} ${i.phone ? styles.onPhone : ''}`} style={place(i)}>
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                focusable="false"
-                set:html={i.paths}
-              />
-          </span>
-        ))
-      }
-    </div>
-    <div class={styles.title}>
-      <h1 class={`t-hero ${styles.headline}`} data-print-title>{hero.headline}</h1>
-      <script is:inline set:html={PRINT_TITLE} />
-      <p class={`t-body ${styles.sub}`}>{hero.description}</p>
-      <div class={styles.actions}>
-        <ArrowButton href={DOCS_URL} variant="onBrand">Read the docs</ArrowButton>
-        <ArrowButton href={REPO} variant="onBrandGhost">View on GitHub</ArrowButton>
+<section class="hero" aria-labelledby="hero-title">
+  <div class="mx-auto flex w-full max-w-[1200px] flex-col items-center px-4">
+    <Badge
+      variant="outline"
+      class="h-[30px] rounded-[9px] border-line bg-card px-[11px] text-[14.5px] font-normal tracking-[0.003em] text-ink"
+    >
+      {hero.badge}
+    </Badge>
+
+    <h1 id="hero-title" class="title">
+      <span class="line">{hero.lines[0]} <AppIcon size={52} class="inline-icon" /> {hero.lines[1]}</span>
+      <span class="line">{hero.lines[2]}</span>
+    </h1>
+
+    <p class="lede">{hero.description}</p>
+
+    <div class="stage">
+      <div class="panel">
+        <div class="slot left"><IntroCard /></div>
+        <div class="slot right"><StoryCard /></div>
+      </div>
+      <div class="phone-slot">
+        <PhoneMock />
       </div>
     </div>
   </div>
 </section>
+
+<style>
+  .hero {
+    padding-top: 64px;
+  }
+  .title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 24px 0 0;
+    font-size: 64px;
+    font-weight: 480;
+    line-height: 75px;
+    letter-spacing: -0.018em;
+    color: var(--c-ink);
+    text-align: center;
+  }
+  .line {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+  .title :global(.inline-icon) {
+    margin: 0 13px 0 14px;
+    transform: translateY(-5px);
+  }
+  .lede {
+    max-width: 396px;
+    margin: 9px 0 0;
+    font-size: 16.5px;
+    line-height: 23.5px;
+    letter-spacing: 0.003em;
+    color: var(--c-body);
+    text-align: center;
+  }
+
+  /* the stage: panel + phone */
+  .stage {
+    position: relative;
+    width: 100%;
+    margin-top: 94px;
+  }
+  .panel {
+    display: flex;
+    justify-content: space-between;
+    height: 443px;
+    padding: 47px;
+    border-radius: 48px;
+    background-color: var(--c-sky);
+    background-image: var(--img-landscape);
+    background-size: cover;
+    background-position: center;
+  }
+  .slot {
+    width: 290px;
+  }
+  .slot.right {
+    width: 291px;
+  }
+  .slot > :global(*),
+  .slot :global(.story) {
+    height: 100%;
+  }
+  .phone-slot {
+    position: absolute;
+    left: 50%;
+    top: -52px;
+    bottom: 0;
+    width: 364px;
+    margin-left: -182px;
+    clip-path: inset(-20px -60px 0 -60px);
+  }
+
+  @media (max-width: 1199px) {
+    .panel {
+      padding: 28px;
+    }
+    .slot,
+    .slot.right {
+      width: calc((100% - 364px - 40px) / 2);
+    }
+  }
+
+  @media (max-width: 999px) {
+    .stage {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 64px;
+    }
+    .panel {
+      display: contents;
+    }
+    .phone-slot {
+      position: relative;
+      left: auto;
+      top: auto;
+      order: -1;
+      width: 100%;
+      height: 443px;
+      margin: 0;
+      padding-top: 52px;
+      clip-path: inset(0 0 0 0 round 0 0 40px 40px);
+    }
+    .phone-slot::before {
+      content: '';
+      position: absolute;
+      inset: 52px 0 0;
+      border-radius: 40px;
+      background-color: var(--c-sky);
+      background-image: var(--img-landscape);
+      background-size: cover;
+      background-position: center;
+    }
+    .phone-slot :global(.phone) {
+      position: relative;
+      margin: -52px auto 0;
+      transform-origin: top center;
+    }
+    .slot,
+    .slot.right {
+      width: 100%;
+    }
+    .slot > :global(*),
+    .slot :global(.story) {
+      border: 1px solid var(--c-line);
+    }
+  }
+  @media (min-width: 640px) and (max-width: 999px) {
+    .stage {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    .phone-slot {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 639px) {
+    .hero {
+      padding-top: 40px;
+    }
+    .title {
+      margin-top: 20px;
+      font-size: 40px;
+      line-height: 48px;
+      letter-spacing: -0.028em;
+    }
+    .title :global(.inline-icon) {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+    }
+    .lede {
+      margin-top: 16px;
+      font-size: 16px;
+    }
+    .phone-slot {
+      height: 400px;
+    }
+    .phone-slot :global(.phone) {
+      zoom: 0.84;
+    }
+  }
+</style>

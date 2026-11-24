@@ -1,0 +1,88 @@
+/* Shared look of the phone's inspector screens (imported by each screen; scoped by the .pane wrapper). */
+.pane {
+  padding: 18px 11.5px 0;
+  color: var(--c-screen-ink);
+}
+.pane p {
+  margin: 0;
+}
+.pane .h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px;
+  font-size: 19px;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+.pane .h small {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  padding: 4px 9px;
+  border-radius: 10px;
+  background: var(--c-screen-glass);
+  box-shadow: inset 0 0 0 1px var(--c-screen-glass-edge);
+  color: var(--c-screen-ink);
+}
+.pane .card {
+  margin-top: 12px;
+  padding: 12px 13px;
+  border-radius: 16px;
+  background: var(--c-screen-card);
+}
+.pane .lbl {
+  margin: 0 0 6px;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--c-screen-body);
+}
+.pane .lbl + .field,
+.pane .field + .lbl {
+  margin-top: 0;
+}
+.pane .field {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 11px;
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 1px var(--c-screen-line-strong);
+  font-size: 12.5px;
+}
+.pane .mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+}
+.pane .gap {
+  height: 10px;
+}
+.pane .btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 40px;
+  border-radius: 20px;
+  background: var(--c-brand-fill);
+  color: var(--c-run-ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+.pane .btn.quiet {
+  background: var(--c-screen-pill);
+  color: var(--c-screen-pill-ink);
+}
+.pane .toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--c-ph-done-bg);
+  color: var(--c-ph-done);
+  font-size: 12px;
+  font-weight: 500;
+}

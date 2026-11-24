@@ -1,0 +1,153 @@
+---
+// The header: a floating bar (rounded, inset from the top, the content column's width) that stays at the top
+// while you scroll: solid, no blur, so it costs nothing per frame. Logo left, five links centred, a quiet theme
+// toggle and the vermilion Get started right. Below 900 px the links fold into a native <details> menu, so it
+// works without JavaScript.
+// The theme toggle is the family's: one button between light and dark that follows the system until pressed;
+// pressing onto the system's own scheme goes back to following it. A stored choice is applied before first
+// paint by the inline script in Base.astro.
+import AppIcon from './AppIcon.astro'
+import { Button } from '$lib/components/ui/button'
+import { Sun, Moon, SquareTerminal } from '@lucide/svelte'
+import { DOCS_URL, REPO } from '../data/app'
+
+const links = [
+  { label: 'Concepts', href: `${DOCS_URL}/concepts/` },
+  { label: 'Inspector', href: `${DOCS_URL}/inspector/` },
+  { label: 'API', href: `${DOCS_URL}/api/` },
+  { label: 'Changelog', href: `${DOCS_URL}/changelog/` },
+  { label: 'GitHub', href: REPO },
+]
+const start = `${DOCS_URL}/quick-start/`
+---
+
+<header class="sticky top-3 z-50 mt-3 max-[639px]:top-2 max-[639px]:mt-2">
+  <a href="#main" class="sr-only-focusable absolute left-4 top-3 z-50 rounded-md bg-card px-3 py-2 text-sm text-ink">
+    Skip to content
+  </a>
+  <div class="mx-auto w-full max-w-[1200px] px-4">
+    <div class="bar relative flex h-[60px] items-center justify-between gap-6 rounded-[20px] bg-card pl-[16px] pr-[8px] max-[639px]:h-[54px] max-[639px]:rounded-[17px] max-[639px]:pl-[12px] max-[639px]:pr-[7px]">
+      <a href="/" class="flex items-center gap-[9px] rounded-[10px] text-ink" aria-label="Durable Runner, home">
+        <AppIcon size={32} class="max-[639px]:!size-[30px]" />
+        <span class="whitespace-nowrap text-[19px] font-[560] leading-none tracking-[-0.018em] max-[639px]:text-[17.5px]">Durable Runner</span>
+      </a>
+
+      <nav aria-label="Primary" class="absolute left-1/2 hidden -translate-x-1/2 min-[900px]:block">
+        <ul class="flex items-center gap-[34px]">
+          {
+            links.map((l) => (
+              <li>
+                <a
+                  href={l.href}
+                  class="rounded-md text-[14.5px] font-[520] leading-none tracking-[-0.005em] text-ink transition-opacity duration-150 hover:opacity-65"
+                >
+                  {l.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+
+      <div class="flex items-center gap-[6px]">
+        <Button
+          variant="ghost"
+          size="icon"
+          class="toggle max-[639px]:size-9"
+          aria-label="Dark theme"
+          aria-pressed="false"
+          title="Switch to dark (following your system)"
+          data-theme-toggle
+        >
+          <Moon class="theme-moon size-[17px]" strokeWidth={1.8} aria-hidden="true" />
+          <Sun class="theme-sun size-[17px]" strokeWidth={1.8} aria-hidden="true" />
+        </Button>
+        <Button
+          href={start}
+          class="max-[639px]:h-10 max-[639px]:rounded-[12px] max-[479px]:hidden"
+        >
+          <SquareTerminal strokeWidth={1.8} aria-hidden="true" />
+          Get started
+        </Button>
+        <details class="menu relative min-[900px]:hidden">
+          <summary
+            class="grid size-10 cursor-pointer list-none place-items-center rounded-[12px] text-ink hover:bg-[var(--c-hover)] max-[639px]:size-9"
+            aria-label="Menu"
+          >
+            <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+              <path d="M4 8h16M4 16h16"></path>
+            </svg>
+          </summary>
+          <ul class="absolute right-0 top-[52px] z-40 w-56 rounded-2xl border border-line bg-card p-2 shadow-[0_12px_32px_-12px_var(--c-shadow)]">
+            {
+              links.map((l) => (
+                <li>
+                  <a href={l.href} class="block rounded-xl px-3 py-2.5 text-[15px] text-ink-soft hover:bg-muted hover:text-ink">
+                    {l.label}
+                  </a>
+                </li>
+              ))
+            }
+            <li class="min-[480px]:hidden">
+              <a href={start} class="btn-brand mt-1 block rounded-xl px-3 py-2.5 text-[15px] font-[520]">Get started</a>
+            </li>
+          </ul>
+        </details>
+      </div>
+    </div>
+  </div>
+</header>
+
+<script>
+  // Theme: no stored choice means the system decides; flipping onto the system's own scheme clears the choice
+  // again. The new theme grows from the button as a circle (a view transition, on click only) unless motion is
+  // reduced or the browser has none. Storage may be blocked: the page still switches for this visit.
+  const button = document.querySelector<HTMLButtonElement>('[data-theme-toggle]')
+  if (button) {
+    const root = document.documentElement
+    const system = matchMedia('(prefers-color-scheme: dark)')
+    const isDark = () => (root.dataset.theme ? root.dataset.theme === 'dark' : system.matches)
+    const sync = () => {
+      const dark = isDark()
+      button.setAttribute('aria-pressed', String(dark))
+      button.title = `${dark ? 'Switch to light' : 'Switch to dark'}${root.dataset.theme ? '' : ' (following your system)'}`
+    }
+    const apply = (next: 'light' | 'dark') => {
+      const follow = next === (system.matches ? 'dark' : 'light')
+      if (follow) delete root.dataset.theme
+      else root.dataset.theme = next
+      try {
+        if (follow) localStorage.removeItem('theme')
+        else localStorage.setItem('theme', next)
+      } catch {}
+      sync()
+    }
+    button.addEventListener('click', () => {
+      const next = isDark() ? 'light' : 'dark'
+      if (!document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches) return apply(next)
+      const box = button.getBoundingClientRect()
+      const x = box.left + box.width / 2
+      const y = box.top + box.height / 2
+      const r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y))
+      document.startViewTransition(() => apply(next)).ready.then(() =>
+        root.animate(
+          { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${r}px at ${x}px ${y}px)`] },
+          { duration: 480, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)', pseudoElement: '::view-transition-new(root)' },
+        ),
+      )
+    })
+    system.addEventListener('change', sync)
+    sync()
+  }
+</script>
+
+<style>
+  .bar {
+    box-shadow:
+      0 0 0 1px var(--c-bar-edge),
+      0 10px 30px -14px var(--c-shadow);
+  }
+  .menu summary::-webkit-details-marker {
+    display: none;
+  }
+</style>

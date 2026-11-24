@@ -1,0 +1,155 @@
+---
+// A horizontal connector between two nodes, with a small monospace label above it.
+//   kind="flow"   a striped bar: data moving in (a submit, a replay)
+//   kind="arrow"  a hairline ending in an arrowhead: a call or a result going out
+//   kind="chev"   a row of chevrons: a copy on its way somewhere
+// A vermilion packet travels its length once (520 ms) when the section plays, and again when the card is
+// hovered. `at` is when it leaves, in ms on the diagram's packet timeline (0 = the first hop), so each hop starts
+// when the previous one arrives. `n` orders the line's entrance; `min` is its narrowest width.
+type Props = { label?: string; kind?: 'flow' | 'arrow' | 'chev'; n?: number; min?: number; at?: number }
+const { label, kind = 'arrow', n = 0, min = 56, at = 0 } = Astro.props
+---
+
+<div class:list={['edge', kind]} style={`--n:${n};--min:${min}px;--t0:${at}ms`} aria-hidden="true">
+  {label && <span class="label">{label}</span>}
+  <span class="line"></span>
+  <span class="packet"><i></i></span>
+</div>
+
+<style>
+  .edge {
+    position: relative;
+    flex: 1 1 var(--min);
+    min-width: var(--min);
+    height: 58px;
+  }
+  .label {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    line-height: 13px;
+    letter-spacing: 0.01em;
+    color: var(--c-body);
+    text-align: center;
+    white-space: nowrap;
+  }
+  .line {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    top: 28px;
+    height: 3px;
+    transform-origin: left center;
+  }
+  .flow .line {
+    height: 4px;
+    top: 27px;
+    background: repeating-linear-gradient(90deg, var(--c-edge) 0 1.5px, transparent 1.5px 3.5px);
+  }
+  .arrow .line {
+    top: 29px;
+    height: 0;
+    border-top: 1.5px dashed var(--c-edge);
+  }
+  .arrow .line::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: -5.5px;
+    width: 7px;
+    height: 7px;
+    border-top: 1.5px solid var(--c-edge);
+    border-right: 1.5px solid var(--c-edge);
+    transform: rotate(45deg);
+  }
+  .chev .line {
+    top: 22px;
+    height: 14px;
+    overflow: hidden;
+  }
+  .chev .line::before {
+    content: '›››››››››››››››››››››››››››››';
+    position: absolute;
+    inset: -2px 0 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    line-height: 14px;
+    letter-spacing: -1px;
+    color: var(--c-edge);
+    white-space: nowrap;
+  }
+
+  /* the packet: a full-width carrier whose dot starts at the left end; moving the carrier by 100% of its own
+     width moves the dot to the right end (transform only) */
+  .packet {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    top: 26px;
+    height: 7px;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .packet i {
+    position: absolute;
+    left: -3px;
+    top: 0;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--c-brand-2);
+    box-shadow: 0 0 0 3px var(--c-brand-tint);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    :global([data-play='armed']) .line,
+    :global([data-play='armed']) .label {
+      opacity: 0;
+    }
+    :global([data-play='in']) .line {
+      animation: draw 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      animation-delay: calc(var(--n) * 90ms + 160ms);
+    }
+    :global([data-play='in']) .label {
+      animation: fade 300ms ease-out both;
+      animation-delay: calc(var(--n) * 90ms + 300ms);
+    }
+    /* --pkt-base: when the packet timeline starts (after the entrance has drawn everything; 0 on a replay) */
+    :global([data-play='in']) .packet,
+    :global([data-replay]) .packet {
+      animation: travel 520ms cubic-bezier(0.45, 0, 0.55, 1) 1;
+      animation-delay: calc(var(--pkt-base, 0ms) + var(--t0));
+    }
+  }
+  @keyframes draw {
+    from {
+      opacity: 0;
+      transform: scaleX(0);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  /* visible only while travelling (no fill): hidden before it leaves and after it arrives */
+  @keyframes travel {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(100%);
+    }
+  }
+</style>

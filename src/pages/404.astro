@@ -1,29 +1,27 @@
 ---
 import Base from '../layouts/Base.astro'
-import Nav from '../components/Nav.astro'
-import Footer from '../components/Footer.astro'
+import SiteHeader from '../components/SiteHeader.astro'
+import SiteFooter from '../components/SiteFooter.astro'
+import { Button } from '$lib/components/ui/button'
+import { House, BookOpen } from '@lucide/svelte'
 import { DOCS_URL } from '../data/app'
-import styles from './404.module.css'
 
 const title = 'Page not found | Durable Runner'
 const description = 'There is no page at this address. The home page and the docs are a click away.'
 ---
 
 <Base title={title} description={description} noindex>
-  <div style="display: flex; flex-direction: column; align-items: center; overflow: clip;">
-    <Nav />
-    <main class={styles.page}>
-      <div class="container">
-        <header class={styles.head}>
-          <p class="t-badge">404</p>
-          <h1 class="t-h2">There's no page here</h1>
-          <p class={`t-body ${styles.lede}`}>
-            The address may be mistyped, or the page may have moved. Try the <a href="/">home page</a> or
-            the <a href={DOCS_URL}>docs</a>.
-          </p>
-        </header>
-      </div>
-    </main>
-    <Footer />
-  </div>
+  <SiteHeader />
+  <main id="main" class="mx-auto flex max-w-[640px] flex-col items-center px-4 pt-24 pb-32 text-center">
+    <p class="rounded-[9px] border border-line px-[11px] py-[5px] text-[14.5px] text-ink">404</p>
+    <h1 class="mt-6 text-[48px] font-medium leading-[56px] tracking-[-0.03em] text-ink">There's no page here</h1>
+    <p class="mt-4 text-[16.5px] leading-[24px] text-body">
+      The address may be mistyped, or the page may have moved. The home page and the docs are a click away.
+    </p>
+    <div class="mt-8 flex gap-3">
+      <Button href="/"><House strokeWidth={1.8} aria-hidden="true" />Home page</Button>
+      <Button href={DOCS_URL} variant="outline"><BookOpen strokeWidth={1.8} aria-hidden="true" />Docs</Button>
+    </div>
+  </main>
+  <SiteFooter />
 </Base>

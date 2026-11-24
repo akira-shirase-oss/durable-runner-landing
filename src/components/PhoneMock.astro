@@ -1,0 +1,197 @@
+---
+// A phone showing the inspector, with what the real one shows (apps/inspector in the product repo): the run
+// in focus with its operation key (the idempotency key), the steps of its spec and the attempt it is on;
+// Submit and Cancel, the API's two run operations; the admin tab (diagnostics, compact, backup); the keys the
+// inspector holds; and the runs list, newest first, with the states the server reports.
+// It is an illustration, so it is one image to assistive tech (role="img" + label) and its parts are hidden.
+// Sizes are the design's, in px, for a 364 px wide phone; the hero scales it on small screens.
+import AppIcon from './AppIcon.astro'
+import RunsScreen from './RunsScreen.astro'
+import { KeyRound } from '@lucide/svelte'
+
+// The screen below the app bar is the default slot (the runs screen unless a page passes another);
+// `label` describes it to assistive tech, and `decorative` hides the whole phone where the page already says it.
+type Props = { label?: string; decorative?: boolean }
+const {
+  label = 'The Durable Runner inspector on a phone: run 7810, operation key nightly-export-2026-11-24, is running step 3 of 4 (publish) on its second attempt, with fetch and render done. Below it, the latest runs: one reconciling a lost reply, one done.',
+  decorative = false,
+} = Astro.props
+
+---
+
+<div class="phone" role={decorative ? undefined : 'img'} aria-label={decorative ? undefined : label} aria-hidden={decorative ? 'true' : undefined}>
+  <div class="bezel" aria-hidden="true">
+    <div class="screen">
+      <div class="status">
+        <span class="time">9:41</span>
+        <span class="island"><span class="lens"></span></span>
+        <span class="sys">
+          <svg viewBox="0 0 18 12" class="bars"><rect x="0" y="8" width="3" height="4" rx="0.8"></rect><rect x="5" y="5.5" width="3" height="6.5" rx="0.8"></rect><rect x="10" y="3" width="3" height="9" rx="0.8"></rect><rect x="15" y="0" width="3" height="12" rx="0.8"></rect></svg>
+          <svg viewBox="0 0 16 12" class="wifi"><path d="M8 11.6 10.4 9a3.4 3.4 0 0 0-4.8 0Z"></path><path d="M3.6 7.1a6.2 6.2 0 0 1 8.8 0l1.5-1.6a8.4 8.4 0 0 0-11.8 0Z"></path><path d="M.5 4a10.6 10.6 0 0 1 15 0L16 3.4 15.5 3A11.3 11.3 0 0 0 .5 3L0 3.4Z"></path></svg>
+          <span class="battery"><span></span></span>
+        </span>
+      </div>
+
+      <div class="appbar">
+        <span class="avatar"><AppIcon size={30} /></span>
+        <span class="title">Inspector</span>
+        <span class="bell"><KeyRound size={17} strokeWidth={1.7} /><i></i></span>
+      </div>
+
+      <slot><RunsScreen /></slot>
+    </div>
+  </div>
+</div>
+
+<style>
+  .phone {
+    width: 364px;
+    height: 760px;
+    padding: 2.5px;
+    border-radius: 62px;
+    background: linear-gradient(160deg, var(--c-phone-rim-hi), var(--c-phone-rim) 30%, var(--c-phone-rim-lo) 70%, var(--c-phone-rim));
+    box-shadow: 0 24px 60px -24px var(--c-phone-shadow);
+  }
+  .bezel {
+    height: 100%;
+    padding: 9.5px;
+    border-radius: 59.5px;
+    background: var(--c-phone-frame);
+  }
+  .screen {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 50px;
+    background: linear-gradient(180deg, var(--c-screen-top) 0%, var(--c-screen-mid) 34%, var(--c-screen-bottom) 62%);
+    color: var(--c-screen-ink);
+    font-optical-sizing: auto;
+  }
+  p {
+    margin: 0;
+  }
+
+  /* status bar */
+  .status {
+    position: relative;
+    height: 50px;
+  }
+  .time {
+    position: absolute;
+    left: 22px;
+    top: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .island {
+    position: absolute;
+    left: 50%;
+    top: 5px;
+    width: 104px;
+    height: 36px;
+    margin-left: -52px;
+    border-radius: 20px;
+    background: var(--c-phone-island);
+  }
+  .lens {
+    position: absolute;
+    right: 9px;
+    top: 9px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, var(--c-lens-hi) 0, var(--c-lens) 45%, var(--c-phone-island) 75%);
+  }
+  .sys {
+    position: absolute;
+    right: 21px;
+    top: 13px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .sys svg {
+    fill: var(--c-screen-ink);
+  }
+  .bars {
+    width: 17px;
+    height: 11px;
+  }
+  .wifi {
+    width: 15px;
+    height: 11px;
+  }
+  .battery {
+    position: relative;
+    width: 24px;
+    height: 11.5px;
+    margin-left: 1px;
+    padding: 1.5px;
+    border: 1px solid var(--c-screen-ink-faint);
+    border-radius: 3.6px;
+  }
+  .battery::after {
+    content: '';
+    position: absolute;
+    right: -3.5px;
+    top: 3.2px;
+    width: 1.6px;
+    height: 3.6px;
+    border-radius: 0 1px 1px 0;
+    background: var(--c-screen-ink-faint);
+  }
+  .battery span {
+    display: block;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--c-screen-ink);
+  }
+
+  /* app bar */
+  .appbar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 40px;
+    margin: 1px 11px 0 10px;
+  }
+  .avatar {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--c-screen-glass);
+    box-shadow: inset 0 0 0 1px var(--c-screen-glass-edge);
+  }
+  .title {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .bell {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--c-screen-glass);
+    box-shadow: inset 0 0 0 1px var(--c-screen-glass-edge);
+  }
+  .bell i {
+    position: absolute;
+    right: 11px;
+    top: 10px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--c-ph-done);
+    box-shadow: 0 0 0 1.5px var(--c-screen-mid);
+  }
+</style>

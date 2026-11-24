@@ -1,0 +1,117 @@
+---
+// The inspector's admin diagnostics, as the phone shows it: the fields durable-server reports
+// (journal generation, records written, live and active runs, dedup keys, disk reserve) and run states.
+import './screen.css'
+import { HardDrive } from '@lucide/svelte'
+
+const stats = [
+  ['Journal generation', '14'],
+  ['Records written', '1,204,318'],
+  ['Live runs', '3,412'],
+  ['Active runs', '28'],
+  ['Dedup keys', '9,120'],
+]
+const states = [
+  ['queued', 3120, 'queued'],
+  ['running', 28, 'run'],
+  ['retry_waiting', 12, 'retry'],
+  ['reconciling', 2, 'probe'],
+]
+const max = 3120
+---
+
+<div class="pane">
+  <p class="h">Diagnostics <small>refresh</small></p>
+  <div class="grid">
+    {
+      stats.map(([k, v]) => (
+        <div class="stat">
+          <p class="k">{k}</p>
+          <p class="v">{v}</p>
+        </div>
+      ))
+    }
+    <div class="stat ok">
+      <p class="k">Disk reserve</p>
+      <p class="v"><HardDrive size={14} strokeWidth={2} />ok</p>
+    </div>
+  </div>
+  <div class="card">
+    <p class="lbl">States</p>
+    {
+      states.map(([name, n, tone]) => (
+        <p class="state">
+          <span class="mono">{name}</span>
+          <span class="bar"><i class={tone as string} style={`width:${Math.max(4, ((n as number) / max) * 100)}%`}></i></span>
+          <span class="num">{(n as number).toLocaleString('en-US')}</span>
+        </p>
+      ))
+    }
+  </div>
+</div>
+
+<style>
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .stat {
+    padding: 10px 11px;
+    border-radius: 14px;
+    background: var(--c-screen-card);
+  }
+  .k {
+    font-size: 10.5px;
+    color: var(--c-screen-body);
+  }
+  .v {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 3px;
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .ok .v {
+    color: var(--c-ph-done);
+  }
+  .state {
+    display: grid;
+    grid-template-columns: 84px 1fr 36px;
+    align-items: center;
+    gap: 8px;
+    height: 24px;
+    font-size: 11px;
+  }
+  .bar {
+    height: 6px;
+    overflow: hidden;
+    border-radius: 3px;
+    background: var(--c-screen-line);
+  }
+  .bar i {
+    display: block;
+    height: 100%;
+    border-radius: 3px;
+  }
+  .bar .queued {
+    background: var(--c-state-queued);
+  }
+  .bar .run {
+    background: var(--c-state-run-ph);
+  }
+  .bar .retry {
+    background: var(--c-ph-retry);
+  }
+  .bar .probe {
+    background: var(--c-state-probe);
+  }
+  .num {
+    text-align: right;
+    font-size: 11px;
+    color: var(--c-screen-body);
+  }
+</style>

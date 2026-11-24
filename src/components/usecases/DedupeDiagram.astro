@@ -1,0 +1,145 @@
+---
+// Use case 3: the same operation key submitted three times (a CI retry, a timeout retry, a manual re-run)
+// comes back as the same run every time.
+import Node from './Node.astro'
+import Edge from './Edge.astro'
+import { ArrowUpRight } from '@lucide/svelte'
+
+// a CI run, a retry after a timeout, a manual re-run: three submits of one operation key
+const submits = ['from CI', 'retried', 're-run']
+---
+
+<div class="flow" role="img" aria-label="The operation key deploy-11-24 is submitted three times; every submit returns the same run, 7811, so the work runs once.">
+  <div class="list" style="--n:0" aria-hidden="true">
+    <p class="head">Submits</p>
+    {
+      submits.map(() => (
+        <p class="row">
+          <span class="chip"><ArrowUpRight size={10} strokeWidth={2.6} /></span>
+          <span class="key">deploy-11-24</span>
+        </p>
+      ))
+    }
+  </div>
+  <Edge kind="arrow" n={1} min={30} at={0} />
+  <Node brand badge="1 run" n={2} badgeAt={520} />
+  <Edge kind="arrow" n={3} min={30} at={600} />
+  <div class="list" style="--n:4" aria-hidden="true">
+    <p class="head">Runs</p>
+    {
+      submits.map((_, i) => (
+        <p class="row">
+          <span class="key">run 7811</span>
+          <em class:list={{ same: i > 0 }}>{i === 0 ? 'new' : 'same'}</em>
+        </p>
+      ))
+    }
+  </div>
+</div>
+
+<style>
+  .flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 0 12px;
+  }
+  .list {
+    flex: none;
+    width: 128px;
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--c-tile);
+    box-shadow:
+      0 0 0 1px var(--c-line),
+      0 8px 18px -10px var(--c-tile-shadow);
+  }
+  .head {
+    margin: 0;
+    padding: 8px 10px 7px;
+    border-bottom: 1px solid var(--c-line);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--c-body);
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    margin: 0;
+    padding: 0 10px;
+  }
+  .row + .row {
+    border-top: 1px solid var(--c-line);
+  }
+  .chip {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 5px;
+    background: var(--c-ph-run-bg);
+    color: var(--c-state-run-ph);
+  }
+  .key {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: var(--c-ink);
+    white-space: nowrap;
+  }
+  .row em {
+    margin-left: auto;
+    font-size: 10.5px;
+    font-style: normal;
+    color: var(--c-body);
+    white-space: nowrap;
+  }
+  .row em.same {
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: var(--c-brand-tint);
+    color: var(--c-brand-deep);
+    font-weight: 600;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global([data-play='armed']) .list {
+      opacity: 0;
+    }
+    :global([data-play='in']) .list {
+      animation: list-in 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      animation-delay: calc(var(--n) * 90ms + 80ms);
+    }
+    /* the repeats are marked "same" once the run comes back out of the runner (the second hop ends at 1120) */
+    :global([data-play='in']) .same,
+    :global([data-replay]) .same {
+      animation: same-pop 280ms cubic-bezier(0.3, 1.6, 0.5, 1) 1 both;
+      animation-delay: calc(var(--pkt-base, 0ms) + 1120ms);
+    }
+  }
+  @keyframes list-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes same-pop {
+    0% {
+      transform: scale(0.6);
+    }
+    70% {
+      transform: scale(1.12);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+</style>
