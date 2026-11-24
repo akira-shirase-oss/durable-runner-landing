@@ -352,7 +352,7 @@ for (const viewport of [desktop, phone]) {
   await page.waitForTimeout(100)
   const replaying = await page.evaluate(() => document.querySelector('.caps .stat').dataset.replay ?? null)
   await page.waitForTimeout(1000)
-  const after = await page.evaluate(() => ({ replay: document.querySelector('.caps .stat').dataset.replay ?? null, running: document.getAnimations().filter((a) => a.playState === 'running').length }))
+  const after = await page.evaluate(() => ({ replay: document.querySelector('.caps .stat').dataset.replay ?? null, running: document.getAnimations().filter((a) => a.playState === 'running' && a.animationName !== 'proof-marquee').length }))
   if (armed !== 'armed' || done !== 'done' || !shown) problems.push(`/ [capabilities]: entrance did not play through: ${JSON.stringify({ armed, done, shown })}`)
   if (replaying !== 'on' || after.replay !== null || after.running) problems.push(`/ [capabilities]: hover replay did not play and end: ${JSON.stringify({ replaying, ...after })}`)
   await context.close()
@@ -389,7 +389,7 @@ for (const viewport of [desktop, phone]) {
   let looped = ''
   for (let i = 0; i < 30 && looped !== '1111'; i++) { await page.waitForTimeout(100); looped = await replays() }
   if (looped !== '1111') problems.push(`/ [use cases]: the loop did not replay every card (${looped})`)
-  const forever = await page.evaluate(() => document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations === Infinity).length)
+  const forever = await page.evaluate(() => document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations === Infinity && a.animationName !== 'proof-marquee').length)
   if (forever) problems.push(`/ [use cases]: ${forever} animation(s) run forever`)
   // the hovered card holds still through the next beat while the others replay
   await page.waitForTimeout(2000)
@@ -453,12 +453,20 @@ for (const reducedMotion of ['no-preference', 'reduce']) {
   const page = await context.newPage()
   await page.goto(origin + '/', { waitUntil: 'networkidle' })
   interactions++
-  await page.locator('.mark.unplug').scrollIntoViewIfNeeded()
-  await page.locator('.mark.unplug').hover()
+  // the strip moves; resting the pointer on it pauses it, then the visible "Lost replies" can be hovered
+  await page.locator('.proof .marquee').scrollIntoViewIfNeeded()
+  const strip = await page.locator('.proof .marquee').boundingBox()
+  await page.mouse.move(strip.x + 10, strip.y + strip.height / 2)
+  await page.waitForTimeout(150)
+  const target = await page.evaluate((s) => {
+    const r = [...document.querySelectorAll('.mark.unplug')].map((e) => e.getBoundingClientRect()).find((r) => r.left > s.x + 150 && r.right < s.x + s.width - 150)
+    return r && { x: r.left + r.width / 2, y: r.top + r.height / 2 }
+  }, strip)
+  await page.mouse.move(target.x, target.y, { steps: 4 })
   await page.waitForTimeout(60)
   const played = await page.evaluate(() => document.getAnimations().filter((a) => a.animationName === 'act-unplug').map((a) => a.effect.getComputedTiming().iterations))
   await page.waitForTimeout(500)
-  const ok = await page.evaluate(() => getComputedStyle(document.querySelector('.mark.unplug .ok')).opacity)
+  const ok = await page.evaluate(() => Math.max(...[...document.querySelectorAll('.mark.unplug .ok')].map((e) => Number(getComputedStyle(e).opacity))).toString())
   const label = reducedMotion === 'reduce' ? 'reduced motion' : 'motion'
   if (reducedMotion === 'reduce' ? played.length !== 0 : played.join() !== '1') problems.push(`/ [crash cases, ${label}]: hover played ${JSON.stringify(played)}`)
   if (ok !== '1') problems.push(`/ [crash cases, ${label}]: the survived check did not show on hover (opacity ${ok})`)
@@ -531,9 +539,52 @@ await visit('/', desktop, async (page, report) => {
   await page.mouse.move(1300, 700, { steps: 10 })
   await page.waitForTimeout(300)
   if ((await boxes()) !== at) report('the hero moved with the pointer')
-  const running = await page.evaluate(() => document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations === Infinity).length)
+  const running = await page.evaluate(() => document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations === Infinity && a.animationName !== 'proof-marquee').length)
   if (running) report(`${running} animation(s) run forever`)
 })
+
+// The crash-case marquee, the page's one endless animation, and its guards: paused until on screen, moving
+// while on screen, paused under the pointer and by its button (which says so), paused again off screen, and
+// absent under reduced motion. The list is in the page as text.
+{
+  const context = await browser.newContext({ viewport: desktop })
+  const page = await context.newPage()
+  await page.goto(origin + '/', { waitUntil: 'networkidle' })
+  interactions++
+  const play = () => page.evaluate(() => document.getAnimations().filter((a) => a.animationName === 'proof-marquee').map((a) => a.playState).join())
+  const x = () => page.evaluate(() => Math.round(document.querySelector('.proof .track').getBoundingClientRect().left))
+  await page.evaluate(() => scrollTo(0, document.body.scrollHeight))
+  await page.waitForTimeout(300)
+  const offscreen = await play()
+  await page.locator('.proof').scrollIntoViewIfNeeded()
+  await page.mouse.move(2, 2)
+  await page.waitForTimeout(300)
+  const x0 = await x()
+  await page.waitForTimeout(1200)
+  const moved = x0 - (await x())
+  const strip = await page.locator('.proof .marquee').boundingBox()
+  await page.mouse.move(strip.x + strip.width / 2, strip.y + strip.height / 2)
+  await page.waitForTimeout(200)
+  const hovered = await play()
+  await page.mouse.move(2, 2)
+  await page.locator('[data-marquee-toggle]').focus()
+  await page.keyboard.press('Enter')
+  await page.waitForTimeout(200)
+  const button = await page.evaluate(() => document.querySelector('[data-marquee-toggle]').getAttribute('aria-pressed'))
+  const pausedByButton = await play()
+  const text = await page.evaluate(() => document.querySelector('.proof .sr-only')?.textContent ?? '')
+  if (offscreen !== 'paused' || !(moved > 10) || hovered !== 'paused' || button !== 'true' || pausedByButton !== 'paused' || !/kill -9/.test(text))
+    problems.push(`/ [marquee]: guards failed: ${JSON.stringify({ offscreen, moved, hovered, button, pausedByButton, text: text.slice(0, 40) })}`)
+  await context.close()
+  const still = await browser.newContext({ viewport: desktop, reducedMotion: 'reduce' })
+  const quiet = await still.newPage()
+  await quiet.goto(origin + '/', { waitUntil: 'networkidle' })
+  await quiet.locator('.proof').scrollIntoViewIfNeeded()
+  await quiet.waitForTimeout(300)
+  const q = await quiet.evaluate(() => document.getAnimations().filter((a) => a.animationName === 'proof-marquee').length)
+  if (q) problems.push('/ [marquee, reduced motion]: the strip still has its animation')
+  await still.close()
+}
 
 // The font actually drawn (Chromium's own record of the platform font per node): everything in the
 // Google Sans Flex web font, never a local fallback.

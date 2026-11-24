@@ -1,15 +1,17 @@
 ---
 // The hero's left card: the promise, the run states as an overlapping stack, the evidence, one action.
+// The states are drawn like the app icon's little siblings: a gradient circle per state with the logo's sheen
+// and inner edge, and a bold white glyph. Hovering the stack fans it out a little (transform only).
 import * as Card from '$lib/components/ui/card'
 import { Button } from '$lib/components/ui/button'
-import { Clock, Play, RotateCcw, ScanSearch, Check, SquareTerminal } from '@lucide/svelte'
+import { Clock3, RotateCcw, Search, Check, SquareTerminal } from '@lucide/svelte'
 import { DOCS_URL } from '../data/app'
 
 const states = [
-  { name: 'Queued', tone: 'queued', Icon: Clock },
-  { name: 'Running', tone: 'run', Icon: Play },
+  { name: 'Queued', tone: 'queued', Icon: Clock3 },
+  { name: 'Running', tone: 'run', Icon: null },
   { name: 'Waiting to retry', tone: 'retry', Icon: RotateCcw },
-  { name: 'Reconciling', tone: 'probe', Icon: ScanSearch },
+  { name: 'Reconciling', tone: 'probe', Icon: Search },
   { name: 'Done', tone: 'done', Icon: Check },
 ]
 ---
@@ -17,15 +19,21 @@ const states = [
 <Card.Root class="intro gap-0 rounded-[28px] bg-card p-[23px] pb-[23px] text-ink ring-0 shadow-[inset_0_0_0_1px_var(--c-card-edge)]">
   <h2 class="text-[32.5px] font-[420] leading-[40px] tracking-[-0.022em] text-ink">Crash It.<br />Lose Nothing.</h2>
 
-  <div class="mt-[23px] flex items-center pl-[5px]" role="img" aria-label="Five of a run's seven states: queued, running, waiting to retry, reconciling and done; failed and cancelled are the other two.">
+  <div class="stack mt-[23px] flex items-center pl-[5px]" role="img" aria-label="Five of a run's seven states: queued, running, waiting to retry, reconciling and done; failed and cancelled are the other two.">
     {
-      states.map(({ tone, Icon }) => (
-        <span class={`state ${tone}`} aria-hidden="true">
-          <Icon size={19} strokeWidth={2} />
+      states.map(({ tone, Icon }, i) => (
+        <span class={`state ${tone}`} style={`--i:${i}`} aria-hidden="true">
+          {Icon ? (
+            <Icon size={19} strokeWidth={tone === 'done' ? 3 : 2.5} />
+          ) : (
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M8 5.6v12.8a1.2 1.2 0 0 0 1.82 1.03l10.3-6.4a1.2 1.2 0 0 0 0-2.06L9.82 4.57A1.2 1.2 0 0 0 8 5.6Z"></path>
+            </svg>
+          )}
         </span>
       ))
     }
-    <span class="more" aria-hidden="true">+2</span>
+    <span class="more" style="--i:5" aria-hidden="true">+2</span>
   </div>
 
   <p class="mt-[22px] text-[16px] leading-[23.5px] tracking-[0.002em] text-body">
@@ -41,6 +49,7 @@ const states = [
 <style>
   .state,
   .more {
+    position: relative;
     display: grid;
     place-items: center;
     flex: none;
@@ -48,40 +57,60 @@ const states = [
     height: 46px;
     margin-right: -7px;
     border-radius: 50%;
-    box-shadow: 0 0 0 2px var(--c-ring);
+    transition: transform 150ms ease-out;
+  }
+  /* a gradient circle with the app icon's sheen (top left), inner edge and a soft drop */
+  .state {
+    color: var(--c-on-brand);
+    background:
+      radial-gradient(120% 90% at 26% 10%, var(--c-st-sheen) 0%, transparent 52%),
+      linear-gradient(150deg, var(--st-1) 0%, var(--st-2) 100%);
+    box-shadow:
+      0 0 0 2px var(--c-ring),
+      inset 0 0 0 1px var(--c-brand-edge),
+      inset 0 -5px 10px -6px var(--c-st-shade),
+      0 6px 12px -8px var(--c-tile-shadow);
+  }
+  .queued {
+    --st-1: var(--c-st-queued-1);
+    --st-2: var(--c-st-queued-2);
+  }
+  .run {
+    --st-1: var(--c-st-run-1);
+    --st-2: var(--c-st-run-2);
+  }
+  .retry {
+    --st-1: var(--c-st-retry-1);
+    --st-2: var(--c-st-retry-2);
+  }
+  .probe {
+    --st-1: var(--c-st-probe-1);
+    --st-2: var(--c-st-probe-2);
+  }
+  .done {
+    --st-1: var(--c-st-done-1);
+    --st-2: var(--c-st-done-2);
   }
   .more {
-    position: relative;
     background: var(--c-card);
     box-shadow:
       0 0 0 2px var(--c-ring),
-      inset 0 0 0 1px var(--c-line);
+      inset 0 0 0 1px var(--c-line-strong),
+      0 6px 12px -8px var(--c-tile-shadow);
     font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
     color: var(--c-ink);
   }
-  .state {
-    position: relative;
+
+  /* micro-interaction: the stack fans out a little under the pointer */
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .stack:hover .state,
+    .stack:hover .more {
+      transform: translateX(calc(var(--i) * 4px));
+    }
   }
-  .queued {
-    background: var(--c-state-queued-bg);
-    color: var(--c-state-queued);
-  }
-  .run {
-    background: var(--c-state-run-bg);
-    color: var(--c-state-run);
-  }
-  .retry {
-    background: var(--c-state-retry-bg);
-    color: var(--c-state-retry);
-  }
-  .probe {
-    background: var(--c-state-probe-bg);
-    color: var(--c-state-probe);
-  }
-  .done {
-    background: var(--c-state-done-bg);
-    color: var(--c-state-done);
-  }
+
   /* 1000–1199 px: the cards narrow around the phone, so the stack tightens to fit */
   @media (min-width: 1000px) and (max-width: 1199px) {
     .state,

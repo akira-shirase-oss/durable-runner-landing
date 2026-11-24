@@ -22,7 +22,8 @@
 //          --shiki-dark), never a fixed colour; every token reaches WCAG AA (4.5:1) on the light code
 //          surface (--c-surface) and 4.8:1 on the dark one.
 // light    the page stays still unless someone acts: no backdrop-filter (a blurred sticky layer re-blurs on
-//          every frame), no animation that repeats forever, and no script listening to pointer or mouse moves,
+//          every frame), no animation that repeats forever except the guarded crash-case marquee
+//          (proof-marquee, paused by default), and no script listening to pointer or mouse moves,
 //          scroll, wheel or touch moves. One-time effects (the title and wordmark print, the theme toggle's view
 //          transition on click) are fine.
 // app      Durable Runner is self-hosted — there is no hosted app or account area, so no page links to one
@@ -709,7 +710,12 @@ function checkLight() {
     checked++
     if (kind === 'css') {
       if (/backdrop-filter\s*:/i.test(text)) fail('light', `${file}: backdrop-filter, which repaints the page under it on every frame`)
-      for (const m of text.matchAll(/animation(?:-iteration-count)?\s*:[^;}]*\binfinite\b/gi)) fail('light', `${file}: an animation that never stops (${m[0].slice(0, 80)})`)
+      for (const m of text.matchAll(/animation(?:-iteration-count)?\s*:[^;}]*\binfinite\b[^;}]*/gi)) {
+        // The one exception (the maintainer's call, 2026-11-24): the crash-case marquee, paused in CSS until its
+        // script says it is on screen; check-csp-browser proves its guards. Anything else that never stops fails.
+        if (/\bproof-marquee\b/.test(m[0]) && /\bpaused\b/.test(m[0])) continue
+        fail('light', `${file}: an animation that never stops (${m[0].slice(0, 80)})`)
+      }
     } else {
       for (const m of text.matchAll(/(?:addEventListener\(\s*["'`](pointermove|mousemove|scroll|wheel|touchmove)["'`]|\bon(pointermove|mousemove|scroll|wheel|touchmove)\s*=)/g))
         fail('light', `${file}: a script listens to ${m[1] ?? m[2]}, which runs on every move`)
