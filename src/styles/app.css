@@ -1,9 +1,11 @@
 @import "tailwindcss";
 @import "./tokens.css";
 
-/* Tailwind reads class names from the site's source only, not from the check scripts' prose. */
+/* Tailwind reads class names from the site's source only, not from the check scripts' prose or the
+   unpublished drafts. */
 @source not "../../scripts";
 @source not "../../.cache";
+@source not "../../drafts";
 
 /* A stored Light/Dark choice sets data-theme; otherwise the device decides (tokens.css). */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
