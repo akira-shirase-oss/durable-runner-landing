@@ -219,6 +219,8 @@ const plans = [
     padding: 12px 14px;
     border-radius: 14px;
     background: var(--c-surface);
+    /* the surface is the card's own colour in dark, so the panel needs a hairline to read */
+    box-shadow: inset 0 0 0 1px var(--c-line);
     font-size: 13.5px;
     line-height: 19px;
     color: var(--c-body);
