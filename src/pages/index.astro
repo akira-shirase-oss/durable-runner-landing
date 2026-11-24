@@ -1,19 +1,19 @@
 ---
 import Base from '../layouts/Base.astro'
-import Nav from '../components/Nav.astro'
+import SiteHeader from '../components/SiteHeader.astro'
+import SiteFooter from '../components/SiteFooter.astro'
 import Hero from '../components/Hero.astro'
-import Surfaces from '../components/Surfaces.astro'
-import WhatItIs from '../components/WhatItIs.astro'
-import Proof from '../components/Proof.astro'
-import HowItWorks from '../components/HowItWorks.astro'
-import QuickStart from '../components/QuickStart.astro'
-import CTA from '../components/CTA.astro'
-import Footer from '../components/Footer.astro'
+import ProofStrip from '../components/ProofStrip.astro'
+import Capabilities from '../components/Capabilities.astro'
+import UseCases from '../components/UseCases.astro'
+import Inspector from '../components/Inspector.astro'
 import { hero } from '../data/hero'
-import { REPO } from '../data/app'
+import { REPO, DOCS_URL } from '../data/app'
 
-const title = `Durable Runner | ${hero.headline.replace(/\.$/, '')}`
-const description = hero.description
+// Search titles lead with what the product is; the hero keeps its three verbs.
+const title = 'Durable Runner: a durable background job runner in Rust'
+const description =
+  'Durable Runner is an open-source, self-hosted background job runner in Rust. Every accepted job is a durable commit, so acknowledged work survives a crash.'
 ---
 
 <Base
@@ -32,27 +32,29 @@ const description = hero.description
       '@type': 'SoftwareApplication',
       name: 'Durable Runner',
       applicationCategory: 'DeveloperApplication',
+      applicationSubCategory: 'Background job runner',
       operatingSystem: 'Linux, macOS',
       url: Astro.site?.href,
       codeRepository: REPO,
+      downloadUrl: REPO,
+      softwareHelp: DOCS_URL,
+      license: 'https://opensource.org/licenses/MIT',
       description,
       isAccessibleForFree: true,
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      publisher: { '@type': 'Organization', name: 'Akira Shirase OSS', url: 'https://404human.dev/' },
     },
   ]}
 >
-  <div id="root">
-    <div style="display: flex; flex-direction: column; align-items: center; overflow: clip;">
-      <Nav />
-      <main style="width: 100%; display: flex; flex-direction: column; align-items: center; margin-top: 1px; gap: var(--section-gap); padding-bottom: var(--section-gap);">
-        <Hero />
-        <Surfaces />
-        <WhatItIs />
-        <Proof />
-        <HowItWorks />
-        <QuickStart />
-        <CTA />
-      </main>
-      <Footer />
-    </div>
-  </div>
+  <link slot="head" rel="preload" as="image" type="image/webp" href="/hero/landscape.webp" media="(prefers-color-scheme: light)" fetchpriority="high" />
+  <link slot="head" rel="preload" as="image" type="image/webp" href="/hero/landscape-night.webp" media="(prefers-color-scheme: dark)" fetchpriority="high" />
+  <SiteHeader />
+  <main id="main" class="overflow-x-clip pb-24">
+    <Hero />
+    <ProofStrip />
+    <Capabilities />
+    <UseCases />
+    <Inspector />
+  </main>
+  <SiteFooter />
 </Base>

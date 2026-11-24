@@ -1,0 +1,242 @@
+---
+// The hero's right card: three short stories about the inspector, stepped with the arrow buttons.
+// Every story is in the HTML, stacked in one grid cell, so the card keeps the tallest story's height and
+// nothing moves when one changes; only opacity animates (150 ms, on click). A ~0.5 kB script steps them.
+import { Button } from '$lib/components/ui/button'
+import { ArrowLeft, ArrowRight, Check, RotateCcw, Play, Archive } from '@lucide/svelte'
+
+const stories = [
+  { title: 'Watch every attempt', body: 'See each step, retry and reply as it happens.', crop: '-770px -38px' },
+  { title: 'Pick up after a crash', body: 'Restart replays the journal. Nothing acked is lost.', crop: '-36px -10px' },
+  { title: 'Back up while it runs', body: 'Copy a consistent backup, then restore it in one step.', crop: '-560px -120px' },
+]
+---
+
+<div class="story" data-story>
+  <div class="stack">
+    {
+      stories.map((s, i) => (
+        <div class:list={['slide', { on: i === 0 }]} data-slide data-title={s.title} aria-hidden={i === 0 ? undefined : 'true'} inert={i !== 0}>
+          <div class="visual" style={`background-position:${s.crop}`}>
+            {i === 0 && (
+              <div class="ui timeline">
+                <p class="row"><span class="dot done"><Check size={10} strokeWidth={3} /></span><span>fetch</span><em>120 ms</em></p>
+                <p class="row"><span class="dot retry"><RotateCcw size={10} strokeWidth={3} /></span><span>render</span><em>attempt 2</em></p>
+                <p class="row"><span class="dot run"><Play size={9} strokeWidth={3} /></span><span>publish</span><em>running</em></p>
+              </div>
+            )}
+            {i === 1 && (
+              <div class="ui replay">
+                <p class="big">800,000</p>
+                <p class="small">queued runs replayed in 1.7 s</p>
+                <p class="note">dev machine</p>
+              </div>
+            )}
+            {i === 2 && (
+              <div class="ui backup">
+                <span class="file"><Archive size={15} strokeWidth={1.8} /></span>
+                <div>
+                  <p class="name">nightly-1</p>
+                  <p class="small">backup · restored</p>
+                </div>
+                <span class="dot done"><Check size={10} strokeWidth={3} /></span>
+              </div>
+            )}
+          </div>
+          <h3>{s.title}</h3>
+          <p class="body">{s.body}</p>
+        </div>
+      ))
+    }
+  </div>
+
+  <p class="sr-only" aria-live="polite" data-live></p>
+
+  <div class="arrows">
+    <Button variant="outline" size="icon-sm" aria-label="Previous story" data-step="-1">
+      <ArrowLeft strokeWidth={2.2} />
+    </Button>
+    <Button variant="outline" size="icon-sm" aria-label="Next story" data-step="1">
+      <ArrowRight strokeWidth={2.2} />
+    </Button>
+  </div>
+</div>
+
+<script>
+  for (const card of document.querySelectorAll<HTMLElement>('[data-story]')) {
+    const slides = [...card.querySelectorAll<HTMLElement>('[data-slide]')]
+    const live = card.querySelector<HTMLElement>('[data-live]')
+    let at = 0
+    const show = (n: number) => {
+      at = (n + slides.length) % slides.length
+      slides.forEach((slide, i) => {
+        const on = i === at
+        slide.classList.toggle('on', on)
+        slide.inert = !on
+        if (on) slide.removeAttribute('aria-hidden')
+        else slide.setAttribute('aria-hidden', 'true')
+      })
+      if (live) live.textContent = `Story ${at + 1} of ${slides.length}: ${slides[at].dataset.title}`
+    }
+    for (const button of card.querySelectorAll<HTMLElement>('[data-step]')) {
+      button.addEventListener('click', () => show(at + Number(button.dataset.step)))
+    }
+  }
+</script>
+
+<style>
+  .story {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 23px;
+    border-radius: 28px;
+    background: var(--c-card);
+    box-shadow: inset 0 0 0 1px var(--c-card-edge);
+    color: var(--c-ink);
+  }
+  .stack {
+    display: grid;
+  }
+  .slide {
+    grid-area: 1 / 1;
+    opacity: 0;
+    transition: opacity 150ms ease-out;
+  }
+  .slide.on {
+    opacity: 1;
+  }
+  .visual {
+    position: relative;
+    display: grid;
+    place-items: center;
+    height: 155px;
+    overflow: hidden;
+    border-radius: 15px;
+    background-color: var(--c-sky);
+    background-image: var(--img-landscape);
+    background-size: 1168px 443px;
+    background-repeat: no-repeat;
+  }
+  h3 {
+    margin: 15px 0 0;
+    font-size: 20px;
+    font-weight: 400;
+    line-height: 26px;
+    letter-spacing: -0.012em;
+  }
+  .body {
+    margin: 6px 0 0;
+    font-size: 16px;
+    line-height: 23.5px;
+    letter-spacing: 0.002em;
+    color: var(--c-body);
+  }
+  .arrows {
+    display: flex;
+    gap: 9px;
+    margin-top: auto;
+    padding-top: 16px;
+  }
+
+  /* the little screens on the sky */
+  .ui {
+    border-radius: 13px;
+    background: var(--c-screen-card);
+    color: var(--c-screen-ink);
+    box-shadow: 0 10px 24px -12px var(--c-phone-shadow);
+  }
+  p {
+    margin: 0;
+  }
+  .timeline {
+    width: 172px;
+    padding: 7px 10px;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 18px 1fr auto;
+    align-items: center;
+    gap: 7px;
+    height: 27px;
+    font-size: 12px;
+  }
+  .row + .row {
+    border-top: 1px solid var(--c-screen-line);
+  }
+  .row em {
+    font-style: normal;
+    font-size: 10.5px;
+    color: var(--c-screen-body);
+  }
+  .dot {
+    display: grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 6px;
+  }
+  .dot.done {
+    background: var(--c-ph-done-bg);
+    color: var(--c-ph-done);
+  }
+  .dot.retry {
+    background: var(--c-ph-retry-bg);
+    color: var(--c-ph-retry);
+  }
+  .dot.run {
+    background: var(--c-ph-run-bg);
+    color: var(--c-state-run-ph);
+  }
+  .replay {
+    min-width: 168px;
+    padding: 12px 14px;
+    text-align: center;
+  }
+  .big {
+    font-size: 26px;
+    font-weight: 500;
+    line-height: 30px;
+    letter-spacing: -0.02em;
+  }
+  .small {
+    font-size: 11px;
+    line-height: 15px;
+    color: var(--c-screen-body);
+  }
+  .note {
+    margin-top: 6px;
+    font-size: 9.5px;
+    color: var(--c-screen-body);
+  }
+  .backup {
+    display: grid;
+    grid-template-columns: 32px auto 18px;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 11px;
+    white-space: nowrap;
+  }
+  .file {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: var(--c-brand-tint);
+    color: var(--c-brand-deep);
+  }
+  .name {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 17px;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+</style>

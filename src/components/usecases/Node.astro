@@ -1,0 +1,131 @@
+---
+// A diagram node: a rounded tile holding an icon (the default slot), a label under it, and an optional badge
+// on its corner. `brand` swaps the tile for the app icon (the runner itself). `n` orders the entrance.
+// `badgeAt` pops the badge when a packet reaches this node (ms on the diagram's packet timeline); without it
+// the badge pops with the node's entrance.
+import AppIcon from '../AppIcon.astro'
+
+type Props = { label?: string; badge?: string; brand?: boolean; n?: number; class?: string; badgeAt?: number }
+const { label, badge, brand = false, n = 0, class: className, badgeAt } = Astro.props
+const timed = badgeAt !== undefined
+---
+
+<div class:list={['node', className, { timed }]} style={`--n:${n}${timed ? `;--b0:${badgeAt}ms` : ''}`}>
+  <div class:list={['tile', { brand }]}>
+    {brand ? <AppIcon size={44} /> : <slot />}
+    {badge && <span class="badge">{badge}</span>}
+  </div>
+  {label && <p class="label">{label}</p>}
+</div>
+
+<style>
+  /* the node's box is the tile alone; the label hangs below it, so nodes, edges and forks share one centre */
+  .node {
+    position: relative;
+    flex: none;
+  }
+  .tile {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 58px;
+    height: 58px;
+    border-radius: 16px;
+    background: var(--c-tile);
+    box-shadow:
+      0 0 0 1px var(--c-line),
+      0 8px 18px -10px var(--c-tile-shadow);
+    color: var(--c-ink-soft);
+    transition: transform 150ms ease-out;
+  }
+  .tile :global(svg) {
+    width: 24px;
+    height: 24px;
+  }
+  .tile.brand {
+    background: var(--c-tile);
+  }
+  .badge {
+    position: absolute;
+    right: -8px;
+    top: -8px;
+    display: grid;
+    place-items: center;
+    min-width: 21px;
+    height: 21px;
+    padding: 0 5px;
+    border-radius: 11px;
+    background: var(--c-brand-tint);
+    box-shadow: 0 0 0 2px var(--c-tile);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--c-brand-deep);
+    white-space: nowrap;
+  }
+  .label {
+    position: absolute;
+    left: 50%;
+    top: 67px;
+    margin: 0;
+    transform: translateX(-50%);
+    font-size: 13px;
+    line-height: 16px;
+    color: var(--c-ink);
+    white-space: nowrap;
+  }
+
+  /* entrance (the section's data-play) and replay (the card's data-replay); transform and opacity only */
+  @media (prefers-reduced-motion: no-preference) {
+    :global([data-play='armed']) .node {
+      opacity: 0;
+    }
+    :global([data-play='in']) .node {
+      animation: node-in 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      animation-delay: calc(var(--n) * 90ms + 80ms);
+    }
+    :global([data-play='in']) .badge,
+    :global([data-replay]) .badge {
+      animation: badge-pop 300ms cubic-bezier(0.3, 1.6, 0.5, 1) both;
+      animation-delay: calc(var(--n) * 90ms + 380ms);
+    }
+    :global([data-replay]) .badge {
+      animation-delay: 260ms;
+    }
+    :global([data-play='armed']) .timed .badge {
+      opacity: 0;
+    }
+    :global([data-play='in']) .timed .badge,
+    :global([data-replay]) .timed .badge {
+      animation-delay: calc(var(--pkt-base, 0ms) + var(--b0));
+    }
+    @media (hover: hover) {
+      :global([data-tile]:hover) .tile {
+        transform: translateY(-2px);
+      }
+    }
+  }
+  @keyframes node-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes badge-pop {
+    0% {
+      transform: scale(0.4);
+      opacity: 0;
+    }
+    70% {
+      transform: scale(1.15);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+</style>

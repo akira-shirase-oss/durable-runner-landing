@@ -1,0 +1,271 @@
+---
+// The inspector section: the hero's landscape panel again, with a card of four inspector features on the left
+// and the phone on the right. The features are a native exclusive accordion (<details name>), so they open and
+// close without any script; a few lines of script only switch the phone to the matching screen. The list is the
+// content for everyone; the phone mirrors it, so it is hidden from assistive tech.
+// Every feature is a real inspector tab (products/durable-runner apps/inspector): runs, submit, admin.
+import PhoneMock from './PhoneMock.astro'
+import RunsScreen from './RunsScreen.astro'
+import SubmitScreen from './inspector/SubmitScreen.astro'
+import DiagnosticsScreen from './inspector/DiagnosticsScreen.astro'
+import AdminScreen from './inspector/AdminScreen.astro'
+import { Activity, FilePlus2, Gauge, DatabaseBackup } from '@lucide/svelte'
+
+const features = [
+  { title: 'Watch every run', body: 'Every step, attempt and state, read from the journal and listed newest first.', Icon: Activity, Screen: RunsScreen },
+  { title: 'Submit from the browser', body: 'Write the operation key and the steps, submit, and get a durable ack back.', Icon: FilePlus2, Screen: SubmitScreen },
+  { title: 'Read the diagnostics', body: 'Journal generation, live runs, dedup keys and the disk reserve on one screen.', Icon: Gauge, Screen: DiagnosticsScreen },
+  { title: 'Back up and compact', body: 'Write a named backup or a new journal generation, each one confirm away.', Icon: DatabaseBackup, Screen: AdminScreen },
+]
+---
+
+<section class="insp" id="inspector" aria-labelledby="insp-title">
+  <h2 id="insp-title" class="sr-only">Inside the inspector</h2>
+  <div class="panel">
+    <div class="card" data-features>
+      {
+        features.map(({ title, body, Icon }, i) => (
+          <details name="inspector-features" open={i === 0} data-feature={i}>
+            <summary>
+              <Icon class="icon" strokeWidth={1.7} aria-hidden="true" />
+              <span>{title}</span>
+            </summary>
+            <p>{body}</p>
+          </details>
+        ))
+      }
+    </div>
+    <div class="phone-slot">
+      <PhoneMock decorative>
+        <div class="panes">
+          {
+            features.map(({ Screen }, i) => (
+              <div class:list={['pane-wrap', { on: i === 0 }]} data-pane={i}>
+                <Screen />
+              </div>
+            ))
+          }
+        </div>
+      </PhoneMock>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Show the screen of whichever feature is open; when all are closed, keep the last one.
+  for (const list of document.querySelectorAll<HTMLElement>('[data-features]')) {
+    const section = list.closest('section')
+    const panes = [...(section?.querySelectorAll<HTMLElement>('[data-pane]') ?? [])]
+    for (const item of list.querySelectorAll<HTMLDetailsElement>('details')) {
+      item.addEventListener('toggle', () => {
+        if (!item.open) return
+        for (const pane of panes) pane.classList.toggle('on', pane.dataset.pane === item.dataset.feature)
+      })
+    }
+  }
+</script>
+
+<style>
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .insp {
+    width: 100%;
+    max-width: 1200px;
+    margin: 128px auto 0;
+    padding: 0 16px;
+  }
+  .panel {
+    position: relative;
+    display: flex;
+    height: 542px;
+    padding: 47px;
+    overflow: hidden;
+    border-radius: 48px;
+    background-color: var(--c-sky);
+    background-image: var(--img-landscape);
+    background-size: cover;
+    background-position: center 30%;
+  }
+
+  /* the feature card: four bordered items, one open */
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 17px;
+    width: 537px;
+    padding: 25px;
+    border-radius: 37px;
+    background: var(--c-card);
+    box-shadow: inset 0 0 0 1px var(--c-card-edge);
+  }
+  details {
+    border-radius: 30px;
+    box-shadow: inset 0 0 0 1.5px var(--c-line);
+    transition: box-shadow 150ms ease-out;
+  }
+  details:hover {
+    box-shadow: inset 0 0 0 1.5px var(--c-line-strong);
+  }
+  summary {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    height: 71px;
+    padding: 0 23px;
+    cursor: pointer;
+    list-style: none;
+    border-radius: 30px;
+    font-size: 22px;
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    color: var(--c-ink);
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  summary :global(.icon) {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    color: var(--c-ink-soft);
+    transition: color 150ms ease-out;
+  }
+  details[open] summary {
+    height: 62px;
+    padding-top: 12px;
+  }
+  details[open] summary :global(.icon) {
+    color: var(--c-brand-deep);
+  }
+  details p {
+    margin: 0;
+    padding: 0 23px 24px 57px;
+    max-width: 470px;
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: 0.002em;
+    color: var(--c-body);
+  }
+
+  /* the phone: rises from the panel's bottom edge on the right */
+  .phone-slot {
+    position: absolute;
+    right: 72px;
+    top: 37px;
+  }
+  .panes {
+    display: grid;
+  }
+  .pane-wrap {
+    grid-area: 1 / 1;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 150ms ease-out,
+      visibility 0s linear 150ms;
+  }
+  .pane-wrap.on {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 150ms ease-out;
+  }
+
+  /* micro-interactions: the opened text rises in, the icon nudges on hover */
+  @media (prefers-reduced-motion: no-preference) {
+    details[open] p {
+      animation: open-in 220ms ease-out both;
+    }
+    .pane-wrap.on {
+      animation: pane-in 220ms ease-out both;
+    }
+    details:not([open]):hover summary :global(.icon) {
+      transform: translateX(2px);
+      transition: transform 150ms ease-out;
+    }
+  }
+  @keyframes open-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes pane-in {
+    from {
+      transform: translateY(6px);
+    }
+    to {
+      transform: none;
+    }
+  }
+
+  @media (max-width: 1199px) {
+    .panel {
+      padding: 28px;
+    }
+    .card {
+      width: min(537px, 52%);
+    }
+    .phone-slot {
+      right: 40px;
+    }
+  }
+  @media (max-width: 999px) {
+    .panel {
+      flex-direction: column;
+      height: auto;
+      padding: 16px 16px 0;
+      border-radius: 40px;
+    }
+    .card {
+      width: 100%;
+      padding: 16px;
+      border-radius: 28px;
+    }
+    .phone-slot {
+      position: relative;
+      right: auto;
+      top: auto;
+      display: flex;
+      justify-content: center;
+      height: 430px;
+      margin-top: 28px;
+      overflow: hidden;
+    }
+  }
+  @media (max-width: 639px) {
+    .insp {
+      margin-top: 96px;
+    }
+    summary {
+      height: 60px;
+      gap: 12px;
+      padding: 0 18px;
+      font-size: 18.5px;
+    }
+    details[open] summary {
+      height: 54px;
+      padding-top: 8px;
+    }
+    details p {
+      padding: 0 18px 18px 50px;
+      font-size: 15px;
+      line-height: 22px;
+    }
+    .phone-slot {
+      height: 380px;
+    }
+    .phone-slot :global(.phone) {
+      zoom: 0.84;
+    }
+  }
+</style>

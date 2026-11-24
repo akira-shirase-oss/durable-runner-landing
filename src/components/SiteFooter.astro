@@ -1,0 +1,202 @@
+---
+// The footer: the logo, one sentence on what Durable Runner is and the places to follow it on the left, two
+// link columns on the right, a hairline, and the closing line centred under it. Every link goes somewhere real
+// (the docs pages, the repository, the changelog feed).
+import AppIcon from './AppIcon.astro'
+import { Rss } from '@lucide/svelte'
+import { DOCS_URL, REPO } from '../data/app'
+
+const columns = [
+  {
+    title: 'Product',
+    links: [
+      { label: 'Concepts', href: `${DOCS_URL}/concepts/` },
+      { label: 'Inspector', href: `${DOCS_URL}/inspector/` },
+      { label: 'API', href: `${DOCS_URL}/api/` },
+      { label: 'Changelog', href: `${DOCS_URL}/changelog/` },
+    ],
+  },
+  {
+    title: 'Resources',
+    links: [
+      { label: 'Quick start', href: `${DOCS_URL}/quick-start/` },
+      { label: 'Self-hosting', href: `${DOCS_URL}/self-hosting/deployment/` },
+      { label: 'Security', href: `${DOCS_URL}/self-hosting/security/` },
+      { label: 'Source code', href: REPO },
+    ],
+  },
+]
+---
+
+<footer class="foot">
+  <div class="top">
+    <div class="brand">
+      <a href="/" class="logo" aria-label="Durable Runner, home">
+        <AppIcon size={42} />
+        <span>Durable Runner</span>
+      </a>
+      <p class="about">
+        A background-task runner in Rust where accepting a job is a durable commit. <span class="keep">Self-hosted</span> and MIT licensed.
+      </p>
+      <ul class="social">
+        <li>
+          <a href={REPO} aria-label="Durable Runner on GitHub">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"></path></svg>
+          </a>
+        </li>
+        <li>
+          <a href="https://x.com/404humandev" aria-label="Durable Runner on X">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path transform="translate(5 6)" d="M 11.026 0 L 13.173 0 L 8.483 5.507 L 14 13 L 9.68 13 L 6.296 8.455 L 2.425 13 L 0.276 13 L 5.293 7.11 L 0 0 L 4.43 0 L 7.488 4.154 Z M 10.272 11.68 L 11.462 11.68 L 3.783 1.251 L 2.507 1.251 Z"></path></svg>
+          </a>
+        </li>
+        <li>
+          <a href={`${DOCS_URL}/changelog/rss.xml`} aria-label="The changelog's RSS feed">
+            <Rss strokeWidth={1.9} aria-hidden="true" />
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <nav class="cols" aria-label="Footer">
+      {
+        columns.map((c) => (
+          <div class="col">
+            <p class="head">{c.title}</p>
+            <ul>
+              {c.links.map((l) => (
+                <li>
+                  <a href={l.href}>{l.label}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </nav>
+  </div>
+
+  <p class="legal">© 2026 Durable Runner · Made with Rust and a journal</p>
+</footer>
+
+<style>
+  .foot {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px 40px;
+  }
+  .top {
+    display: flex;
+    justify-content: space-between;
+    gap: 48px;
+    padding: 0 0 52px;
+    border-bottom: 1px solid var(--c-line);
+  }
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+    border-radius: 12px;
+    color: var(--c-ink);
+    text-decoration: none;
+  }
+  .logo span {
+    font-size: 24px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .keep {
+    white-space: nowrap;
+  }
+  .about {
+    max-width: 344px;
+    text-wrap: pretty;
+    margin: 24px 0 0;
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: 0.002em;
+    color: var(--c-body);
+  }
+  .social {
+    display: flex;
+    gap: 14px;
+    margin: 26px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .social a {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    margin-left: -8px;
+    border-radius: 10px;
+    color: var(--c-ink);
+    transition:
+      background-color 150ms ease-out,
+      transform 150ms ease-out;
+  }
+  .social li + li a {
+    margin-left: 0;
+  }
+  .social a:hover {
+    background: var(--c-hover);
+    transform: translateY(-1px);
+  }
+  .social :global(svg) {
+    width: 18px;
+    height: 18px;
+  }
+  .cols {
+    display: flex;
+    gap: 64px;
+    padding-right: 40px;
+  }
+  .col {
+    min-width: 116px;
+  }
+  .head {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    color: var(--c-ink);
+  }
+  .col ul {
+    display: grid;
+    gap: 13px;
+    margin: 22px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .col a {
+    border-radius: 6px;
+    font-size: 15.5px;
+    line-height: 24px;
+    color: var(--c-body);
+    text-decoration: none;
+    transition: color 150ms ease-out;
+  }
+  .col a:hover {
+    color: var(--c-ink);
+  }
+  .legal {
+    margin: 40px 0 0;
+    text-wrap: balance;
+    font-size: 15.5px;
+    letter-spacing: 0.01em;
+    color: var(--c-body);
+    text-align: center;
+  }
+
+  @media (max-width: 799px) {
+    .top {
+      flex-direction: column;
+      gap: 40px;
+    }
+    .cols {
+      gap: 32px;
+      padding-right: 0;
+    }
+  }
+</style>

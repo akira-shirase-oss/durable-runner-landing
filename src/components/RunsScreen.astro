@@ -1,0 +1,319 @@
+---
+// The inspector's runs screen, as the phone shows it in the hero: the run in focus with its operation key,
+// its spec's steps and the attempt it is on; Submit and Cancel; the admin (backup) button; the runs list,
+// newest first, with the states the server reports. Illustration only (the phone hides it from assistive tech).
+import { ArrowUpRight, X, DatabaseBackup, CircleCheck, Play, ScanSearch, Check } from '@lucide/svelte'
+
+// The run in focus: its spec's steps, two checkpointed, the third on its second attempt.
+const steps = [
+  { name: 'fetch', done: true },
+  { name: 'render', done: true },
+  { name: 'publish', now: true },
+  { name: 'notify' },
+]
+const runs = [
+  { id: '7810', key: 'nightly-export-2026-11-24', step: '2 / 4', state: 'Running', tone: 'run', Icon: Play },
+  { id: '7809', key: 'deploy-2026-11-24', step: '1 / 3', state: 'Reconciling', tone: 'probe', Icon: ScanSearch },
+  { id: '7808', key: 'digest-2026-11-24', step: '3 / 3', state: 'Done', tone: 'done', Icon: Check },
+]
+---
+
+  <div class="flow">
+    <p class="run-id">Run 7810</p>
+    <span class="live"><i></i>Running</span>
+    <p class="name">nightly-export-<br />2026-11-24</p>
+    <ol class="track">
+      {
+        steps.map((st) => (
+          <li class:list={{ done: st.done, now: st.now }}>
+            <span></span>
+            {st.name}
+          </li>
+        ))
+      }
+    </ol>
+    <div class="meta">
+      <p class="label">Attempt</p>
+      <p class="value">2 on publish</p>
+    </div>
+    <div class="total">
+      <p class="label">Steps checkpointed</p>
+      <p class="amount"><CircleCheck size={15} strokeWidth={2} />2 of 4</p>
+    </div>
+  </div>
+
+  <div class="actions">
+    <span class="primary"><ArrowUpRight size={16} strokeWidth={1.8} />Submit</span>
+    <span class="secondary"><X size={15} strokeWidth={1.8} />Cancel</span>
+    <span class="more"><DatabaseBackup size={16} strokeWidth={1.7} /></span>
+  </div>
+
+  <div class="list">
+    <div class="list-head">
+      <p>Latest runs</p>
+      <span class="go"><ArrowUpRight size={12} strokeWidth={2} /></span>
+    </div>
+    {
+      runs.map(({ id, key, step, state, tone, Icon }) => (
+        <div class="row">
+          <span class={`chip ${tone}`}>
+            <Icon size={11} strokeWidth={2.4} />
+          </span>
+          <div class="who">
+            <p class="id">{id}</p>
+            <p class="job">{key}</p>
+          </div>
+          <p class="step">{step}</p>
+          <p class={`state ${tone}`}>{state}</p>
+        </div>
+      ))
+    }
+  </div>
+
+<style>
+  p {
+    margin: 0;
+  }
+  /* the workflow card */
+  .flow {
+    position: relative;
+    height: 160px;
+    margin: 20px 11.5px 0;
+    overflow: hidden;
+    border-radius: 18px;
+    color: var(--c-run-ink);
+    background:
+      radial-gradient(90% 120% at 100% 0%, var(--c-run-2) 0%, transparent 70%),
+      linear-gradient(135deg, var(--c-run-1) 0%, var(--c-run-mid) 55%, var(--c-run-2) 100%);
+  }
+  .run-id {
+    position: absolute;
+    left: 13px;
+    top: 11px;
+    font-size: 11px;
+    line-height: 14px;
+    color: var(--c-run-soft);
+  }
+  .live {
+    position: absolute;
+    right: 12px;
+    top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    height: 20px;
+    padding: 0 8px;
+    border-radius: 10px;
+    background: var(--c-run-faint);
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--c-run-ink);
+  }
+  .live i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--c-run-ink);
+  }
+  .name {
+    position: absolute;
+    left: 13px;
+    top: 29px;
+    font-size: 17px;
+    line-height: 21px;
+    letter-spacing: -0.005em;
+  }
+  .track {
+    position: absolute;
+    left: 13px;
+    right: 15px;
+    top: 82px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 9.5px;
+    line-height: 12px;
+    color: var(--c-run-soft);
+  }
+  .track span {
+    display: block;
+    height: 4px;
+    margin-bottom: 4px;
+    border-radius: 2px;
+    background: var(--c-run-faint);
+  }
+  .track .done span {
+    background: var(--c-run-ink);
+  }
+  .track .now span {
+    background: linear-gradient(90deg, var(--c-run-ink) 45%, var(--c-run-faint) 45%);
+  }
+  .track .now {
+    color: var(--c-run-ink);
+    font-weight: 500;
+  }
+  .label {
+    font-size: 9px;
+    line-height: 12px;
+    color: var(--c-run-soft);
+  }
+  .meta {
+    position: absolute;
+    left: 13px;
+    bottom: 13px;
+  }
+  .value {
+    font-size: 11px;
+    line-height: 14px;
+    color: var(--c-run-ink);
+  }
+  .total {
+    position: absolute;
+    right: 15px;
+    bottom: 11px;
+    text-align: right;
+  }
+  .amount {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+    font-size: 19px;
+    line-height: 22px;
+    letter-spacing: 0.005em;
+  }
+
+  /* Submit / Cancel / more */
+  .actions {
+    display: flex;
+    gap: 8px;
+    margin: 13px 11.5px 0;
+  }
+  .actions > span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    height: 40px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 450;
+  }
+  .primary {
+    width: 131px;
+    background: var(--c-brand-fill);
+    color: var(--c-run-ink);
+  }
+  .secondary {
+    width: 130px;
+    background: var(--c-screen-pill);
+    color: var(--c-screen-pill-ink);
+  }
+  .more {
+    width: 40px;
+    margin-left: auto;
+    background: var(--c-screen-pill);
+    color: var(--c-screen-pill-ink);
+  }
+
+  /* latest runs */
+  .list {
+    margin: 13px 11.5px 0;
+    padding: 14px 13px 0;
+    border-radius: 16px;
+    background: var(--c-screen-card);
+  }
+  .list-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 26px;
+  }
+  .list-head p {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+  }
+  .go {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px var(--c-screen-line-strong);
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) 38px 70px;
+    align-items: center;
+    column-gap: 9px;
+    height: 68px;
+    border-bottom: 1px solid var(--c-screen-line);
+  }
+  .row:first-of-type {
+    height: 66px;
+  }
+  .chip {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+  }
+  .chip.run {
+    background: var(--c-ph-run-bg);
+    color: var(--c-state-run-ph);
+  }
+  .chip.done {
+    background: var(--c-ph-done-bg);
+    color: var(--c-ph-done);
+  }
+  .chip.retry {
+    background: var(--c-ph-retry-bg);
+    color: var(--c-ph-retry);
+  }
+  .id {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 19px;
+    letter-spacing: -0.01em;
+  }
+  .job {
+    margin-top: 2px;
+    overflow: hidden;
+    font-size: 10px;
+    line-height: 13px;
+    color: var(--c-screen-body);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .step {
+    font-size: 12px;
+    color: var(--c-screen-ink);
+    white-space: nowrap;
+  }
+  .state {
+    justify-self: end;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .state.run {
+    color: var(--c-state-run-ph);
+  }
+  .state.done {
+    color: var(--c-ph-done);
+  }
+  .state.retry {
+    color: var(--c-ph-retry);
+  }
+  .chip.probe {
+    background: var(--c-state-probe-bg);
+    color: var(--c-state-probe);
+  }
+  .state.probe {
+    color: var(--c-state-probe);
+  }
+</style>

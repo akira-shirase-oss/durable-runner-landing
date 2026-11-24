@@ -1,0 +1,217 @@
+---
+// A branch from one node to two stacked targets: a stem from the source's centre, then an elbow up and an
+// elbow down, each ending in an arrowhead at a target tile, with a monospace label on each arm.
+// Geometry matches a target column of two 58 px tiles 44 px apart (tile centres at 29 and 131, stem at 80).
+// Packets: one runs the stem (200 ms), then splits and runs both elbows at once, up or down (160 ms) and on to
+// the targets (300 ms): 660 ms in all from `at` on the diagram's packet timeline. Transform only.
+type Props = { up?: string; down?: string; n?: number; min?: number; at?: number }
+const { up, down, n = 0, min = 84, at = 0 } = Astro.props
+---
+
+<div class="fork" style={`--n:${n};--min:${min}px;--t0:${at}ms`} aria-hidden="true">
+  <span class="stem"></span>
+  <span class="arm up"></span>
+  <span class="arm down"></span>
+  <span class="pk stem-pk"><i></i></span>
+  <span class="pk v-up"><i></i></span>
+  <span class="pk v-down"><i></i></span>
+  <span class="pk h-up"><i></i></span>
+  <span class="pk h-down"><i></i></span>
+  {up && <span class="label up">{up}</span>}
+  {down && <span class="label down">{down}</span>}
+</div>
+
+<style>
+  .fork {
+    position: relative;
+    flex: 1 1 var(--min);
+    min-width: var(--min);
+    height: 160px;
+  }
+  .stem {
+    position: absolute;
+    left: 8px;
+    width: 30%;
+    top: 80px;
+    border-top: 1.5px dashed var(--c-edge);
+  }
+  .arm {
+    position: absolute;
+    left: calc(8px + 30%);
+    right: 8px;
+    border-left: 1.5px dashed var(--c-edge);
+  }
+  .arm.up {
+    top: 29px;
+    height: 51px;
+    border-top: 1.5px dashed var(--c-edge);
+  }
+  .arm.down {
+    top: 80px;
+    height: 51px;
+    border-bottom: 1.5px dashed var(--c-edge);
+  }
+  .arm::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    width: 7px;
+    height: 7px;
+    border-top: 1.5px solid var(--c-edge);
+    border-right: 1.5px solid var(--c-edge);
+    transform: rotate(45deg);
+  }
+  .arm.up::after {
+    top: -5.5px;
+  }
+  .arm.down::after {
+    bottom: -5.5px;
+  }
+  .label {
+    position: absolute;
+    left: calc(8px + 30%);
+    right: 8px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    line-height: 13px;
+    color: var(--c-body);
+    text-align: center;
+    white-space: nowrap;
+  }
+  .label.up {
+    top: 10px;
+  }
+  .label.down {
+    top: 137px;
+  }
+
+  /* packet carriers: each spans one segment; moving the carrier by 100% of its own size moves its dot from
+     one end of the segment to the other */
+  .pk {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .pk i {
+    position: absolute;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--c-brand-2);
+    box-shadow: 0 0 0 3px var(--c-brand-tint);
+  }
+  .stem-pk {
+    left: 8px;
+    width: 30%;
+    top: 76.5px;
+    height: 7px;
+  }
+  .stem-pk i,
+  .h-up i,
+  .h-down i {
+    left: -3.5px;
+    top: 0;
+  }
+  .v-up,
+  .v-down {
+    left: calc(8px + 30% - 3.5px);
+    width: 7px;
+    height: 51px;
+  }
+  .v-up {
+    top: 29px;
+  }
+  .v-up i {
+    left: 0;
+    bottom: -3.5px;
+  }
+  .v-down {
+    top: 80px;
+  }
+  .v-down i {
+    left: 0;
+    top: -3.5px;
+  }
+  .h-up,
+  .h-down {
+    left: calc(8px + 30%);
+    right: 8px;
+    height: 7px;
+  }
+  .h-up {
+    top: 25.5px;
+  }
+  .h-down {
+    top: 127.5px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global([data-play='armed']) .fork > :not(.pk) {
+      opacity: 0;
+    }
+    :global([data-play='in']) .fork > :not(.pk) {
+      animation: fork-in 360ms ease-out both;
+      animation-delay: calc(var(--n) * 90ms + 200ms);
+    }
+    :global([data-play='in']) .stem-pk,
+    :global([data-replay]) .stem-pk {
+      animation: seg-x 200ms linear 1;
+      animation-delay: calc(var(--pkt-base, 0ms) + var(--t0));
+    }
+    :global([data-play='in']) .v-up,
+    :global([data-replay]) .v-up {
+      animation: seg-up 160ms linear 1;
+      animation-delay: calc(var(--pkt-base, 0ms) + var(--t0) + 200ms);
+    }
+    :global([data-play='in']) .v-down,
+    :global([data-replay]) .v-down {
+      animation: seg-down 160ms linear 1;
+      animation-delay: calc(var(--pkt-base, 0ms) + var(--t0) + 200ms);
+    }
+    :global([data-play='in']) .h-up,
+    :global([data-play='in']) .h-down,
+    :global([data-replay]) .h-up,
+    :global([data-replay]) .h-down {
+      animation: seg-x 300ms cubic-bezier(0.3, 0, 0.6, 1) 1;
+      animation-delay: calc(var(--pkt-base, 0ms) + var(--t0) + 360ms);
+    }
+  }
+  @keyframes seg-x {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(100%);
+    }
+  }
+  @keyframes seg-up {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(-100%);
+    }
+  }
+  @keyframes seg-down {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(100%);
+    }
+  }
+  @keyframes fork-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+</style>

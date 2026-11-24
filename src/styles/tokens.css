@@ -1,237 +1,291 @@
-/* Every colour on the site, light first, each with a dark twin designed for it (not inverted).
-   The dark set applies when the system asks for it, unless the visitor chose Light in the header,
-   and always when they chose Dark (data-theme on <html>, set before first paint by Base.astro).
-   scripts/colors.test.mjs fails on any colour written anywhere else, and on a token without its twin. */
-
+/*
+ * Durable Runner's palette, the only file with literal colours (scripts/colors.test.mjs enforces it).
+ * Light values live on :root; each has a dark twin in BOTH dark blocks below: the device's dark setting
+ * (unless Light was chosen) and an explicit Dark choice. Components read these through var(--c-…) or the
+ * Tailwind names mapped in app.css.
+ */
 :root {
   color-scheme: light;
 
-  /* Page and type: black is primary, white secondary, greys neutral tints between them. */
-  --c-bg: #ffffff;
-  --c-surface: #f2f2f2;
-  --c-raised: #fafafa;
-  --c-raised-hover: #f4f4f4;
-  --c-ink: #000000;
-  --c-prose: #2b2b2b;
-  --c-text: #5e5e5e;
-  --c-muted: #8c8c8c;
-  --c-faint: #e5e5e5;
-  --c-line: #dedede;
-  --c-dash: #d4d4d4;
-  --c-underline: #bdbdbd;
-  --c-accent: #000000;
-  /* text and marks drawn on an ink-filled shape (the primary button) */
-  --c-on-ink: #ffffff;
-  --c-focus: #2f64e8;
+  /* page and type */
+  --c-page: #ffffff;
+  --c-ink: #1e1e1e;
+  --c-ink-soft: #474747;
+  --c-body: #5c5c5c;
+  --c-line: #ebebeb;
+  --c-line-strong: #dedede;
+  --c-surface: #f6f7f9;
+  --c-focus: #c9431a;
 
-  /* Raised icon tiles and the quiet cards they sit on */
-  --c-tile-top: #f6f6f6;
-  --c-tile-bottom: #efefef;
-  --c-tile-ink: #0a0a0a;
-  --c-tile-drop: rgba(0, 0, 0, 0.06);
-  --c-tile-spread: rgba(0, 0, 0, 0.07);
-  --c-tile-highlight: rgba(255, 255, 255, 0.9);
-  --c-card-edge: rgba(0, 0, 0, 0.012);
-  --c-card-edge-hover: rgba(0, 0, 0, 0.05);
+  /* the brand: vermilion. The app icon's gradient and white mark, the phone's workflow card and Submit,
+     a tint for brand chips, and a deeper shade for focus rings and any brand-coloured text (4.9:1 on white) */
+  --c-brand-1: #ff9a5c;
+  --c-brand-2: #f0501f;
+  --c-brand-glow: #ffd9c2;
+  --c-on-brand: #ffffff;
+  --c-brand-fill: #e5531f;
+  --c-brand-tint: #ffe6da;
+  --c-brand-deep: #c9431a;
 
-  /* Status chips on the What-it-is cards: tone (dot), ring, tint (chip fill) and the chip's text */
-  --c-chip-ink: #1f1f1f;
-  --c-blue: #2f64e8;
-  --c-blue-ring: #c9d8fb;
-  --c-blue-tint: #eef2fc;
-  --c-blue-soft: #7d9ff0;
-  --c-green: #3fb24f;
-  --c-green-ring: #d0eed4;
-  --c-green-tint: #edf7ee;
-  --c-pink: #e04a8f;
-  --c-pink-ring: #f7cfe1;
-  --c-pink-tint: #fcedf3;
-  --c-pink-soft: #ee8cb9;
+  /* cards that sit on the landscape */
+  --c-card: #ffffff;
+  --c-ring: #ffffff;
+  --c-card-edge: #ffffff00;
 
-  /* The draft stamp on unpublished posts */
-  --c-draft-bg: #fff4d6;
-  --c-draft-ink: #6b4e00;
-  /* Pixel-art illustrations in the closing statement: one small palette with a 1-cell outline */
-  --c-px-outline: #14161c;
-  --c-px-blue: #0061ff;
-  --c-px-orange: #ff8a3d;
-  --c-px-green: #3fbf6b;
-  --c-px-pink: #ff7eb6;
-  --c-px-cream: #fff1d0;
-  /* The brand block (the hero and the CTA): white at the top to #0061ff at the bottom, the same in both
-     themes, with navy type, a navy button and quiet navy icons; a hairline edge where the page is white. */
-  --c-brand-top: #ffffff;
-  --c-brand-bottom: #0061ff;
-  --c-on-brand: #08142b;
-  --c-brand-button: #08142b;
-  --c-brand-button-text: #ffffff;
-  --c-brand-edge: rgba(8, 20, 43, 0.12);
-  --c-brand-icon: rgba(8, 40, 120, 0.5);
+  /* the proof strip under the hero */
+  --c-mark: #8c8c8c;
+  --c-mark-faint: #c9c9c9;
 
+  /* the phone: frame and screen */
+  --c-phone-rim: #9a9ca2;
+  --c-phone-frame: #1b1b1d;
+  --c-phone-island: #050505;
+  --c-screen-top: #aac9f1;
+  --c-screen-mid: #cfdff3;
+  --c-screen-bottom: #e8edf4;
+  --c-screen-ink: #111827;
+  --c-screen-body: #6b7280;
+  --c-screen-glass: #ffffff8c;
+  --c-screen-pill: #c2d3ea;
+  --c-screen-pill-ink: #24344f;
+  --c-screen-card: #ffffff;
+  --c-screen-line: #eef0f3;
 
+  /* the run card inside the phone */
+  --c-run-1: #e1461b;
+  --c-run-2: #ff8f57;
+  --c-run-ink: #ffffff;
+  --c-run-soft: #ffffffa6;
+  --c-run-faint: #ffffff2e;
 
+  /* run states, used in the phone and the story card */
+  --c-state-run: #2f6af5;
+  --c-state-run-bg: #e3edff;
+  --c-state-done: #14804a;
+  --c-state-done-bg: #dcf5e6;
+  --c-state-retry: #a16207;
+  --c-state-retry-bg: #fdf3c7;
+  --c-state-queued: #5b5f6b;
+  --c-state-queued-bg: #eceef2;
+  --c-state-probe: #6d4ad8;
+  --c-state-probe-bg: #ece6fd;
+  --c-alert: #f04438;
 
-  /* The footer's oversized wordmark: a faint tone on the footer panel */
-  --c-wordmark: #e3e3e3;
-
-  /* Diagrams in posts */
-  --c-figure-fill: #f2f2f2;
-  --c-figure-ink: #000000;
-  --c-figure-text: #5e5e5e;
-  --c-figure-rule: #8c8c8c;
-
-  /* Theme toggle in the header: its hover ground and focus ring */
-  --c-switch-bg: #f2f2f2;
-  --c-focus-ring: rgba(47, 100, 232, 0.25);
+  /* edges, shadows, the phone and its states (the phone shows the inspector in the page's theme) */
+  --c-brand-edge: #ffffff40;
+  --c-brand-shade: #b8340f55;
+  --c-shadow: #0000002e;
+  --c-sky: #7fb0e8;
+  --c-hover: #f5f5f5;
+  --c-phone-rim-hi: #d9dbe0;
+  --c-phone-rim-lo: #55575c;
+  --c-phone-shadow: #0f172a59;
+  --c-lens-hi: #3a4a7a;
+  --c-lens: #141a2e;
+  --c-screen-ink-faint: #11182780;
+  --c-screen-glass-edge: #ffffffb3;
+  --c-run-mid: #f0602b;
+  --c-state-run-ph: #3172f4;
+  --c-screen-line-strong: #e3e6ea;
+  --c-ph-run-bg: #e3edff;
+  --c-ph-done-bg: #dcf5e6;
+  --c-ph-done: #14804a;
+  --c-ph-retry-bg: #fdf3c7;
+  --c-ph-retry: #a16207;
+  --c-scrim: #0a0f1ca6;
+  --c-scrim-soft: #0a0f1c33;
+  --c-on-photo: #ffffff;
+  --c-on-photo-soft: #ffffffd9;
+  --c-glass: #ffffff2e;
+  --c-glass-edge: #ffffff4d;
+  --c-cta: #d0461b;
+  --c-cta-hover: #c4411a;
+  --c-on-cta: #ffffff;
+  --c-bar-edge: #0000000f;
+  --c-cta-hi: #ee5f2b;
+  --c-panel: #fafafb;
+  --c-tile: #ffffff;
+  --c-dot: #e3e4e8;
+  --c-edge: #c4c8cf;
+  --c-tile-shadow: #0f172a1f;
 }
 
-/* Dark: a warm near-black page (never pure black), surfaces that step up in lightness instead of
-   using shadows, an off-white ink, and every grey re-measured for AA on the surface it sits on. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-
-    --c-bg: #121211;
-    --c-surface: #1d1d1b;
-    --c-raised: #181817;
-    --c-raised-hover: #1e1e1c;
-    --c-ink: #f2f1ec;
-    --c-prose: #d9d7d0;
-    --c-text: #aeaca5;
-    --c-muted: #8d8b85;
-    --c-faint: #2a2a27;
-    --c-line: #2f2f2c;
-    --c-dash: #3c3c38;
-    --c-underline: #5c5b56;
-    --c-accent: #f2f1ec;
-    --c-on-ink: #121211;
-    --c-focus: #8eadf7;
-
-    --c-tile-top: #272725;
-    --c-tile-bottom: #20201e;
-    --c-tile-ink: #ebe9e3;
-    --c-tile-drop: rgba(0, 0, 0, 0.5);
-    --c-tile-spread: rgba(0, 0, 0, 0.4);
-    --c-tile-highlight: rgba(255, 255, 255, 0.07);
-    --c-card-edge: rgba(255, 255, 255, 0.04);
-    --c-card-edge-hover: rgba(255, 255, 255, 0.09);
-
-    --c-chip-ink: #ebe9e3;
-    --c-blue: #7d9ff0;
-    --c-blue-ring: #24345c;
-    --c-blue-tint: #1a2136;
-    --c-blue-soft: #5b78bd;
-    --c-green: #62c46f;
-    --c-green-ring: #1f3a25;
-    --c-green-tint: #17251a;
-    --c-pink: #ee7fb2;
-    --c-pink-ring: #4a2236;
-    --c-pink-tint: #2a1820;
-    --c-pink-soft: #b86a8f;
-
-    --c-draft-bg: #3a2f12;
-    --c-draft-ink: #f0d58c;
-    --c-px-outline: #e9e7e1;
-    --c-px-blue: #4d8dff;
-    --c-px-orange: #ff9a55;
-    --c-px-green: #55cf7f;
-    --c-px-pink: #ff8fc0;
-    --c-px-cream: #2b2924;
-    /* The brand block (the hero and the CTA): white at the top to #0061ff at the bottom, the same in both
-       themes, with navy type, a navy button and quiet navy icons; a hairline edge where the page is white. */
-    --c-brand-top: #ffffff;
-    --c-brand-bottom: #0061ff;
-    --c-on-brand: #08142b;
-    --c-brand-button: #08142b;
-    --c-brand-button-text: #ffffff;
-    --c-brand-edge: rgba(255, 255, 255, 0.1);
-    --c-brand-icon: rgba(8, 40, 120, 0.5);
-
-
-
-
-    --c-wordmark: #262624;
-
-    --c-figure-fill: #1d1d1b;
-    --c-figure-ink: #f2f1ec;
-    --c-figure-text: #aeaca5;
-    --c-figure-rule: #77756f;
-
-    --c-switch-bg: #1d1d1b;
-    --c-focus-ring: rgba(142, 173, 247, 0.3);
+    --c-page: #0d0e10;
+    --c-ink: #f1f1f1;
+    --c-ink-soft: #c4c4c4;
+    --c-body: #a3a3a3;
+    --c-line: #24262a;
+    --c-line-strong: #31343a;
+    --c-surface: #16181c;
+    --c-focus: #ff8a5c;
+    --c-brand-1: #ff9a5c;
+    --c-brand-2: #f0501f;
+    --c-brand-glow: #ffd9c2;
+    --c-on-brand: #ffffff;
+    --c-brand-fill: #ef5f2a;
+    --c-brand-tint: #3a1f14;
+    --c-brand-deep: #ff8a5c;
+    --c-card: #16181b;
+    --c-ring: #16181b;
+    --c-mark: #8a8a8a;
+    --c-mark-faint: #4a4a4a;
+    --c-phone-rim: #4a4c52;
+    --c-phone-frame: #0a0a0b;
+    --c-phone-island: #050505;
+    --c-screen-top: #1d3358;
+    --c-screen-mid: #131d33;
+    --c-screen-bottom: #0d121d;
+    --c-screen-ink: #f1f4f9;
+    --c-screen-body: #95a0b3;
+    --c-screen-glass: #ffffff17;
+    --c-screen-pill: #26324a;
+    --c-screen-pill-ink: #d6e0f0;
+    --c-screen-card: #171c26;
+    --c-screen-line: #232a37;
+    --c-run-1: #d6431a;
+    --c-run-2: #f7834c;
+    --c-run-ink: #ffffff;
+    --c-run-soft: #ffffffa6;
+    --c-run-faint: #ffffff2e;
+    --c-state-run: #7fa8ff;
+    --c-state-run-bg: #1a2742;
+    --c-state-done: #4ccf8a;
+    --c-state-done-bg: #12301f;
+    --c-state-retry: #facc15;
+    --c-state-retry-bg: #33290c;
+    --c-state-queued: #b4b8c2;
+    --c-state-queued-bg: #262a31;
+    --c-state-probe: #b6a3f5;
+    --c-state-probe-bg: #2a2244;
+    --c-alert: #f97066;
+    --c-brand-edge: #ffffff40;
+    --c-brand-shade: #b8340f55;
+    --c-shadow: #00000099;
+    --c-sky: #1d3463;
+    --c-hover: #1f2226;
+    --c-phone-rim-hi: #8d9097;
+    --c-phone-rim-lo: #2a2b2f;
+    --c-phone-shadow: #000000a6;
+    --c-lens-hi: #3a4a7a;
+    --c-lens: #141a2e;
+    --c-screen-ink-faint: #f1f4f980;
+    --c-screen-glass-edge: #ffffff24;
+    --c-run-mid: #e85a28;
+    --c-state-run-ph: #4a86f7;
+    --c-screen-line-strong: #2e3646;
+    --c-ph-run-bg: #1a2742;
+    --c-ph-done-bg: #12301f;
+    --c-ph-done: #4ccf8a;
+    --c-ph-retry-bg: #33290c;
+    --c-ph-retry: #facc15;
+    --c-card-edge: #ffffff12;
+    --c-scrim: #05070dc7;
+    --c-scrim-soft: #05070d4d;
+    --c-on-photo: #ffffff;
+    --c-on-photo-soft: #ffffffd9;
+    --c-glass: #ffffff24;
+    --c-glass-edge: #ffffff38;
+    --c-cta: #d0461b;
+    --c-cta-hover: #c4411a;
+    --c-on-cta: #ffffff;
+    --c-bar-edge: #ffffff14;
+    --c-cta-hi: #ee5f2b;
+    --c-panel: #121417;
+    --c-tile: #1d2025;
+    --c-dot: #262a30;
+    --c-edge: #454a53;
+    --c-tile-shadow: #00000080;
   }
 }
 
-/* The same dark set, when the visitor chose Dark. Kept identical to the block above by colors.test.mjs. */
 :root[data-theme="dark"] {
   color-scheme: dark;
-
-  --c-bg: #121211;
-  --c-surface: #1d1d1b;
-  --c-raised: #181817;
-  --c-raised-hover: #1e1e1c;
-  --c-ink: #f2f1ec;
-  --c-prose: #d9d7d0;
-  --c-text: #aeaca5;
-  --c-muted: #8d8b85;
-  --c-faint: #2a2a27;
-  --c-line: #2f2f2c;
-  --c-dash: #3c3c38;
-  --c-underline: #5c5b56;
-  --c-accent: #f2f1ec;
-  --c-on-ink: #121211;
-  --c-focus: #8eadf7;
-
-  --c-tile-top: #272725;
-  --c-tile-bottom: #20201e;
-  --c-tile-ink: #ebe9e3;
-  --c-tile-drop: rgba(0, 0, 0, 0.5);
-  --c-tile-spread: rgba(0, 0, 0, 0.4);
-  --c-tile-highlight: rgba(255, 255, 255, 0.07);
-  --c-card-edge: rgba(255, 255, 255, 0.04);
-  --c-card-edge-hover: rgba(255, 255, 255, 0.09);
-
-  --c-chip-ink: #ebe9e3;
-  --c-blue: #7d9ff0;
-  --c-blue-ring: #24345c;
-  --c-blue-tint: #1a2136;
-  --c-blue-soft: #5b78bd;
-  --c-green: #62c46f;
-  --c-green-ring: #1f3a25;
-  --c-green-tint: #17251a;
-  --c-pink: #ee7fb2;
-  --c-pink-ring: #4a2236;
-  --c-pink-tint: #2a1820;
-  --c-pink-soft: #b86a8f;
-
-  --c-draft-bg: #3a2f12;
-  --c-draft-ink: #f0d58c;
-  --c-px-outline: #e9e7e1;
-  --c-px-blue: #4d8dff;
-  --c-px-orange: #ff9a55;
-  --c-px-green: #55cf7f;
-  --c-px-pink: #ff8fc0;
-  --c-px-cream: #2b2924;
-  /* The brand block (the hero and the CTA): white at the top to #0061ff at the bottom, the same in both
-     themes, with navy type, a navy button and quiet navy icons; a hairline edge where the page is white. */
-  --c-brand-top: #ffffff;
-  --c-brand-bottom: #0061ff;
-  --c-on-brand: #08142b;
-  --c-brand-button: #08142b;
-  --c-brand-button-text: #ffffff;
-  --c-brand-edge: rgba(255, 255, 255, 0.1);
-  --c-brand-icon: rgba(8, 40, 120, 0.5);
-
-
-
-
-  --c-wordmark: #262624;
-
-  --c-figure-fill: #1d1d1b;
-  --c-figure-ink: #f2f1ec;
-  --c-figure-text: #aeaca5;
-  --c-figure-rule: #77756f;
-
-  --c-switch-bg: #1d1d1b;
-  --c-focus-ring: rgba(142, 173, 247, 0.3);
+  --c-page: #0d0e10;
+  --c-ink: #f1f1f1;
+  --c-ink-soft: #c4c4c4;
+  --c-body: #a3a3a3;
+  --c-line: #24262a;
+  --c-line-strong: #31343a;
+  --c-surface: #16181c;
+  --c-focus: #ff8a5c;
+  --c-brand-1: #ff9a5c;
+  --c-brand-2: #f0501f;
+  --c-brand-glow: #ffd9c2;
+  --c-on-brand: #ffffff;
+  --c-brand-fill: #ef5f2a;
+  --c-brand-tint: #3a1f14;
+  --c-brand-deep: #ff8a5c;
+  --c-card: #16181b;
+  --c-ring: #16181b;
+  --c-mark: #8a8a8a;
+  --c-mark-faint: #4a4a4a;
+  --c-phone-rim: #4a4c52;
+  --c-phone-frame: #0a0a0b;
+  --c-phone-island: #050505;
+  --c-screen-top: #1d3358;
+  --c-screen-mid: #131d33;
+  --c-screen-bottom: #0d121d;
+  --c-screen-ink: #f1f4f9;
+  --c-screen-body: #95a0b3;
+  --c-screen-glass: #ffffff17;
+  --c-screen-pill: #26324a;
+  --c-screen-pill-ink: #d6e0f0;
+  --c-screen-card: #171c26;
+  --c-screen-line: #232a37;
+  --c-run-1: #d6431a;
+  --c-run-2: #f7834c;
+  --c-run-ink: #ffffff;
+  --c-run-soft: #ffffffa6;
+  --c-run-faint: #ffffff2e;
+  --c-state-run: #7fa8ff;
+  --c-state-run-bg: #1a2742;
+  --c-state-done: #4ccf8a;
+  --c-state-done-bg: #12301f;
+  --c-state-retry: #facc15;
+  --c-state-retry-bg: #33290c;
+  --c-state-queued: #b4b8c2;
+  --c-state-queued-bg: #262a31;
+  --c-state-probe: #b6a3f5;
+  --c-state-probe-bg: #2a2244;
+  --c-alert: #f97066;
+  --c-brand-edge: #ffffff40;
+  --c-brand-shade: #b8340f55;
+  --c-shadow: #00000099;
+  --c-sky: #1d3463;
+  --c-hover: #1f2226;
+  --c-phone-rim-hi: #8d9097;
+  --c-phone-rim-lo: #2a2b2f;
+  --c-phone-shadow: #000000a6;
+  --c-lens-hi: #3a4a7a;
+  --c-lens: #141a2e;
+  --c-screen-ink-faint: #f1f4f980;
+  --c-screen-glass-edge: #ffffff24;
+  --c-run-mid: #e85a28;
+  --c-state-run-ph: #4a86f7;
+  --c-screen-line-strong: #2e3646;
+  --c-ph-run-bg: #1a2742;
+  --c-ph-done-bg: #12301f;
+  --c-ph-done: #4ccf8a;
+  --c-ph-retry-bg: #33290c;
+  --c-ph-retry: #facc15;
+  --c-card-edge: #ffffff12;
+  --c-scrim: #05070dc7;
+  --c-scrim-soft: #05070d4d;
+  --c-on-photo: #ffffff;
+  --c-on-photo-soft: #ffffffd9;
+  --c-glass: #ffffff24;
+  --c-glass-edge: #ffffff38;
+  --c-cta: #d0461b;
+  --c-cta-hover: #c4411a;
+  --c-on-cta: #ffffff;
+  --c-bar-edge: #ffffff14;
+  --c-cta-hi: #ee5f2b;
+  --c-panel: #121417;
+  --c-tile: #1d2025;
+  --c-dot: #262a30;
+  --c-edge: #454a53;
+  --c-tile-shadow: #00000080;
 }

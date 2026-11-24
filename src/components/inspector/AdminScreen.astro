@@ -1,0 +1,59 @@
+---
+// The inspector's admin actions, as the phone shows them: back up the journal under a name (confirm first),
+// compact it into a new generation, and the result that comes back.
+import './screen.css'
+import { DatabaseBackup, Layers, CircleCheck } from '@lucide/svelte'
+---
+
+<div class="pane">
+  <p class="h">Admin</p>
+  <div class="card">
+    <p class="title"><DatabaseBackup size={15} strokeWidth={1.9} />Back up the journal</p>
+    <p class="lbl">Backup name</p>
+    <p class="field mono">nightly-1</p>
+    <p class="confirm">Write backup 'nightly-1'?</p>
+    <div class="row">
+      <p class="btn">Yes, back up</p>
+      <p class="btn quiet">No</p>
+    </div>
+  </div>
+  <div class="card">
+    <p class="title"><Layers size={15} strokeWidth={1.9} />Compact the journal</p>
+    <p class="note">Writes a new journal generation; the old one is removed only after the swap is on disk.</p>
+    <p class="btn quiet">Compact</p>
+  </div>
+  <p class="toast"><CircleCheck size={15} strokeWidth={2} />Backup written: nightly-1</p>
+</div>
+
+<style>
+  .title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .confirm {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--c-screen-body);
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .row .btn,
+  .card .btn {
+    height: 36px;
+    font-size: 13px;
+  }
+  .note {
+    margin-bottom: 10px;
+    font-size: 11.5px;
+    line-height: 16px;
+    color: var(--c-screen-body);
+  }
+</style>

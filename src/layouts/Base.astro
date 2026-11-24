@@ -1,7 +1,7 @@
 ---
 // Every page's <head>: title, description, canonical URL, Open Graph and Twitter cards, and
 // optional structured data. Pages pass their own preloads through the `head` slot.
-import '../styles/global.css'
+import '../styles/app.css'
 import { jsonLd } from '../lib/json-ld'
 import { hero } from '../data/hero'
 
@@ -47,6 +47,7 @@ const ld = structured ? (Array.isArray(structured) ? structured : [structured]) 
     {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
     <meta property="og:type" content={type} />
     <meta property="og:site_name" content="Durable Runner" />
+    <meta property="og:locale" content="en_US" />
     {!noindex && <meta property="og:url" content={canonical} />}
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -55,12 +56,13 @@ const ld = structured ? (Array.isArray(structured) ? structured : [structured]) 
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content={imageAlt} />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@404humandev" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={imageUrl} />
     <meta name="twitter:image:alt" content={imageAlt} />
-    <!-- Every page's title is set in Geist Pixel, and on the home page it is the largest paint. -->
-    <link rel="preload" href="/fonts/geist-pixel-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- One font file for the whole site; the headline is the largest paint. -->
+    <link rel="preload" href="/fonts/google-sans-flex-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
     <slot name="head" />

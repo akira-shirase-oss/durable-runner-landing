@@ -1,0 +1,164 @@
+---
+// Use case 1: one versioned spec, its steps run in order, each checkpointed before the next.
+// An inspector-style window: tabs, then your app → POST /jobs → the spec's steps (ticked in turn) → handlers.
+import Node from './Node.astro'
+import Edge from './Edge.astro'
+import { AppWindow, Webhook, Check } from '@lucide/svelte'
+
+const steps = ['fetch', 'render', 'publish', 'purge-cache']
+---
+
+<div class="window" role="img" aria-label="Your app submits a job with POST /jobs; its spec, version 3, has four steps (fetch, render, publish, purge-cache), each checkpointed in turn, and the runner calls your handlers for each.">
+  <div class="tabs" aria-hidden="true">
+    <span>Runs</span><span class="on">Steps</span><span>Handlers</span>
+    <em>op_key nightly-export-2026-11-24</em>
+  </div>
+  <div class="flow" aria-hidden="true">
+    <Node label="your app" n={0}><AppWindow strokeWidth={1.7} /></Node>
+    <Edge kind="flow" label="POST /jobs" n={1} min={84} at={0} />
+    <div class="spec" style="--n:2">
+      <p class="head">Spec · v3</p>
+      {
+        steps.map((s, i) => (
+          <p class="step" style={`--r:${i}`}>
+            <span class="box"><Check size={11} strokeWidth={3} /></span>
+            {s}
+          </p>
+        ))
+      }
+    </div>
+    <Edge kind="arrow" label="4 calls" n={3} min={70} at={1120} />
+    <Node label="handlers" n={4}><Webhook strokeWidth={1.7} /></Node>
+  </div>
+</div>
+
+<style>
+  .window {
+    overflow: hidden;
+    border-radius: 18px;
+    background: var(--c-tile);
+    box-shadow:
+      0 0 0 1px var(--c-line),
+      0 14px 30px -18px var(--c-tile-shadow);
+  }
+  .tabs {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    height: 44px;
+    padding: 0 18px;
+    border-bottom: 1px solid var(--c-line);
+    font-size: 13.5px;
+    color: var(--c-ink-soft);
+  }
+  .tabs .on {
+    position: relative;
+    color: var(--c-brand-deep);
+  }
+  .tabs .on::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -14px;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--c-brand-deep);
+  }
+  .tabs em {
+    margin-left: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    font-style: normal;
+    color: var(--c-body);
+    white-space: nowrap;
+  }
+  .flow {
+    display: flex;
+    align-items: center;
+    padding: 30px 26px 46px;
+    background-image: radial-gradient(circle, var(--c-dot) 1px, transparent 1.3px);
+    background-size: 14px 14px;
+  }
+  .spec {
+    flex: none;
+    width: 158px;
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--c-tile);
+    box-shadow:
+      0 0 0 1px var(--c-line),
+      0 8px 18px -10px var(--c-tile-shadow);
+  }
+  .head {
+    margin: 0;
+    padding: 8px 12px 7px;
+    border-bottom: 1px solid var(--c-line);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--c-body);
+  }
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    height: 31px;
+    margin: 0;
+    padding: 0 12px;
+    font-size: 13px;
+    color: var(--c-ink);
+  }
+  .step + .step {
+    border-top: 1px solid var(--c-line);
+  }
+  .box {
+    display: grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 5px;
+    background: var(--c-cta);
+    color: var(--c-on-cta);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global([data-play='armed']) .spec {
+      opacity: 0;
+    }
+    :global([data-play='in']) .spec {
+      animation: spec-in 320ms cubic-bezier(0.2, 0.8, 0.2, 1) 260ms both;
+    }
+    :global([data-play='armed']) .box {
+      transform: scale(0);
+    }
+    /* each step ticks as the submitted job reaches the spec: the packet arrives at 520 ms */
+    :global([data-play='in']) .box,
+    :global([data-replay]) .box {
+      animation: tick 260ms cubic-bezier(0.3, 1.6, 0.5, 1) both;
+      animation-delay: calc(var(--pkt-base, 0ms) + 520ms + var(--r) * 110ms);
+    }
+  }
+  @keyframes spec-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes tick {
+    0% {
+      transform: scale(0);
+    }
+    70% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+</style>
