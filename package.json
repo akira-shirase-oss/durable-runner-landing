@@ -15,18 +15,18 @@
   },
   "dependencies": {
     "@astrojs/svelte": "^9.1.6",
-    "@lucide/svelte": "^0.577.0",
+    "@lucide/svelte": "^1.76.0",
     "@tailwindcss/vite": "^4.3.5",
     "astro": "7.4.13",
     "clsx": "^2.1.1",
     "svelte": "^5.59.1",
     "tailwind-merge": "^3.7.1",
-    "tailwind-variants": "^3.3.1",
+    "tailwind-variants": "^4.0.2",
     "tailwindcss": "^4.3.5"
   },
   "devDependencies": {
-    "oxlint": "^1.90.0",
-    "typescript": "^6.0.3"
+    "oxlint": "^1.94.0",
+    "typescript": "^7.0.2"
   },
   "license": "MIT"
 }
